@@ -619,6 +619,7 @@ apiRouter.post('/posts', requireAuth, async (c) => {
     path?: string
     mode?: string
     frontmatter?: Record<string, unknown>
+    frontmatterRaw?: string
     content?: string
     commitMessage?: string
   }
@@ -683,15 +684,42 @@ apiRouter.post('/posts', requireAuth, async (c) => {
     } satisfies ApiResponse, 400)
   }
 
-  // Build frontmatter with defaults
-  const frontmatter: Record<string, unknown> = {
-    ...frontmatterDefaults,
-    ...(body.frontmatter || {}),
-  }
-  if (!frontmatter.published) frontmatter.published = new Date().toISOString()
-
   const content = body.content || ''
-  const raw = serializePost(frontmatter, content)
+
+  // If the client sent raw YAML frontmatter, use it verbatim — no
+  // parse→serialize round-trip that would alter formatting/quotes.
+  let frontmatter: Record<string, unknown>
+  let raw: string
+
+  const frontmatterRaw = body.frontmatterRaw?.trim()
+  if (frontmatterRaw) {
+    // Validate that the raw YAML is parseable
+    try {
+      const parsed = load(frontmatterRaw)
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return c.json({
+          ok: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Frontmatter 必须是一个 YAML 对象' },
+        } satisfies ApiResponse, 400)
+      }
+      frontmatter = parsed as Record<string, unknown>
+    } catch {
+      return c.json({
+        ok: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Frontmatter YAML 格式错误' },
+      } satisfies ApiResponse, 400)
+    }
+    // Use the raw YAML as-is — preserves the user's exact formatting
+    raw = `---\n${frontmatterRaw}\n---\n\n${content}`
+  } else {
+    // Legacy path: build frontmatter from defaults + provided object
+    frontmatter = {
+      ...frontmatterDefaults,
+      ...(body.frontmatter || {}),
+    }
+    if (!frontmatter.published) frontmatter.published = new Date().toISOString()
+    raw = serializePost(frontmatter, content)
+  }
 
   // Commit message
   const title = typeof frontmatter.title === 'string' ? frontmatter.title : slugFromPath(filePath)
@@ -758,6 +786,7 @@ apiRouter.put('/posts/*', requireAuth, async (c) => {
   let body: {
     sha?: string
     frontmatter?: Record<string, unknown>
+    frontmatterRaw?: string
     content?: string
     commitMessage?: string
   }
@@ -802,17 +831,41 @@ apiRouter.put('/posts/*', requireAuth, async (c) => {
     throw e
   }
 
-  // Merge frontmatter: existing + overrides
   const { frontmatter: currentFm, content: currentBody } = parseFrontmatter(existing.content)
-  const mergedFm = body.frontmatter
-    ? { ...currentFm, ...body.frontmatter }
-    : currentFm
-
-  // Auto-update `updated` timestamp
-  mergedFm.updated = new Date().toISOString()
-
   const newContent = body.content !== undefined ? body.content : currentBody
-  const raw = serializePost(mergedFm, newContent)
+
+  let mergedFm: Record<string, unknown>
+  let raw: string
+
+  const frontmatterRaw = body.frontmatterRaw?.trim()
+  if (frontmatterRaw) {
+    // Client sent raw YAML — validate and use verbatim
+    try {
+      const parsed = load(frontmatterRaw)
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return c.json({
+          ok: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Frontmatter 必须是一个 YAML 对象' },
+        } satisfies ApiResponse, 400)
+      }
+      mergedFm = parsed as Record<string, unknown>
+    } catch {
+      return c.json({
+        ok: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Frontmatter YAML 格式错误' },
+      } satisfies ApiResponse, 400)
+    }
+    // Use raw YAML as-is — preserves user's exact formatting
+    raw = `---\n${frontmatterRaw}\n---\n\n${newContent}`
+  } else {
+    // Legacy path: merge frontmatter objects + serialize
+    mergedFm = body.frontmatter
+      ? { ...currentFm, ...body.frontmatter }
+      : currentFm
+    // Auto-update `updated` timestamp
+    mergedFm.updated = new Date().toISOString()
+    raw = serializePost(mergedFm, newContent)
+  }
 
   const title = typeof mergedFm.title === 'string' ? mergedFm.title : slugFromPath(filePath)
   const commitMessage =

@@ -590,6 +590,7 @@ async function doSave() {
         path: filePath,
         mode: post.ext,
         frontmatter: post.frontmatter,
+        frontmatterRaw: frontmatterRaw.value,
         content: post.content,
       })
 
@@ -606,6 +607,7 @@ async function doSave() {
       const result = await api.updatePost(post.path, {
         sha: post.sha,
         frontmatter: post.frontmatter,
+        frontmatterRaw: frontmatterRaw.value,
         content: post.content,
       })
 

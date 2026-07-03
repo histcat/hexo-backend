@@ -290,6 +290,10 @@ export const api = {
     path: string
     mode?: 'md' | 'mdx'
     frontmatter?: Record<string, unknown>
+    /** Raw YAML frontmatter — when provided, the backend uses it verbatim
+     * instead of re-serializing the frontmatter object. This preserves the
+     * user's exact formatting and quoting. */
+    frontmatterRaw?: string
     content?: string
     commitMessage?: string
   }) {
@@ -302,6 +306,8 @@ export const api = {
     params: {
       sha: string
       frontmatter?: Record<string, unknown>
+      /** Raw YAML frontmatter — same as createPost, preserves exact formatting. */
+      frontmatterRaw?: string
       content?: string
       commitMessage?: string
     },
