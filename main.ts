@@ -15,9 +15,10 @@ app.use('*', cors({
 // API routes under /api
 app.route('/api', apiRouter)
 
-// Production: serve built Vue SPA
-// In development, Vite dev server on :5173 proxies /api to :8000
-const isProd = Deno.env.get('DENO_ENV') === 'production'
+// Production: serve built Vue SPA.
+// Deno Deploy sets DENO_REGION automatically; local dev won't have it.
+// In development, Vite dev server on :5173 proxies /api to :8000.
+const isProd = !!Deno.env.get('DENO_REGION')
 
 if (isProd) {
   app.get('/*', async (c) => {
