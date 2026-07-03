@@ -259,7 +259,6 @@
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { api, type RepoConfig } from '../api'
-import { draftStore } from '../composables/useDraftStore'
 import { load as parseYaml, dump as stringifyYaml } from 'js-yaml'
 import MarkdownEditor from '../components/MarkdownEditor.vue'
 import MarkdownPreview from '../components/MarkdownPreview.vue'
@@ -321,13 +320,6 @@ const isDirty = computed(() => {
   )
 })
 
-// ── Draft key ──────────────────────────────────────────────────
-
-const draftKey = computed(() => {
-  if (isNew.value) return 'hexo:draft:new'
-  return `hexo:draft:${post.path}`
-})
-
 // ── Lifecycle ──────────────────────────────────────────────────
 
 onMounted(async () => {
@@ -380,14 +372,6 @@ watch(
       return // initial load handled by onMounted
     }
 
-    // Cancel any pending auto-save BEFORE we touch state, so the
-    // timer callback doesn't see a half-mutated post and save stale
-    // data under the wrong draft key.
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer)
-      autoSaveTimer = null
-    }
-
     loading.value = true
     error.value = ''
     menuOpen.value = false
@@ -399,9 +383,7 @@ watch(
       if (newPath) {
         await loadPost(newPath as string)
       } else {
-        // fresh=true: user explicitly navigated to "new post" —
-        // purge any stale draft so we get a clean slate.
-        await initNewPost(true)
+        await initNewPost()
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : '加载编辑器失败'
@@ -442,23 +424,7 @@ async function loadPost(postPath: string) {
   yamlError.value = ''
 }
 
-/**
- * Initialize a blank new-post form.
- *
- * @param fresh - When `true` (user explicitly clicked "New Post"),
- *   delete any stale draft first so we get a truly clean slate.
- *   When `false`/omitted (initial page load with no path), attempt
- *   draft recovery from IndexedDB so unsaved work isn't lost.
- */
-async function initNewPost(fresh = false) {
-  // Purge any lingering "new post" draft before setting up blank state.
-  // This prevents cross-contamination when navigating from an existing
-  // post (whose auto-save timer may have fired during the transition
-  // and written stale data under the 'hexo:draft:new' key).
-  if (fresh) {
-    await draftStore.delete('hexo:draft:new').catch(() => {})
-  }
-
+async function initNewPost() {
   const defaults = config.value?.frontmatterDefaults || {}
   post.path = ''
   post.name = 'new-post.md'
@@ -469,7 +435,7 @@ async function initNewPost(fresh = false) {
     category: '',
     published: new Date().toISOString(),
     tags: [],
-    ...defaults, // repo config defaults take precedence
+    ...defaults,
   }
   post.content = ''
   originalSha = ''
@@ -477,21 +443,6 @@ async function initNewPost(fresh = false) {
   originalFm = {}
   frontmatterRaw.value = fmToYaml(post.frontmatter)
   yamlError.value = ''
-
-  // Draft recovery: only when NOT a fresh creation (initial page load).
-  // When fresh=true we already deleted the draft above, so skip load.
-  if (!fresh) {
-    try {
-      const saved = await draftStore.load('hexo:draft:new')
-      if (saved) {
-        if (saved.frontmatter) post.frontmatter = saved.frontmatter as Record<string, unknown>
-        if (saved.frontmatterRaw) frontmatterRaw.value = saved.frontmatterRaw as string
-        if (saved.content) post.content = saved.content as string
-      }
-    } catch {
-      /* ignore */
-    }
-  }
 }
 
 // ── Frontmatter YAML ↔ Object ──────────────────────────────────
@@ -603,7 +554,6 @@ async function doSave() {
       originalFm = { ...post.frontmatter }
 
       router.replace({ query: { path: result.post.path } })
-      draftStore.delete('hexo:draft:new').catch(() => {})
     } else {
       const result = await api.updatePost(post.path, {
         sha: post.sha,
@@ -616,8 +566,6 @@ async function doSave() {
       originalSha = result.post.sha
       originalContent = post.content
       originalFm = { ...post.frontmatter }
-
-      draftStore.delete(draftKey.value).catch(() => {})
     }
 
     saveState.value = 'saved'
@@ -693,7 +641,6 @@ async function doDelete() {
       commitMessage: `delete: ${post.frontmatter.title || post.name}`,
     })
 
-    draftStore.delete(draftKey.value).catch(() => {})
     router.replace('/posts')
   } catch (e) {
     error.value = e instanceof Error ? e.message : '删除失败'
@@ -762,30 +709,4 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-// ── Auto-save to IndexedDB ──────────────────────────────────────
-
-let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-
-watch(
-  [() => post.content, () => post.frontmatter, () => frontmatterRaw.value],
-  () => {
-    if (autoSaveTimer) clearTimeout(autoSaveTimer)
-    // Capture draft key NOW — not inside the setTimeout callback.
-    // If the route changes between now and when the timer fires,
-    // `draftKey.value` would resolve to 'hexo:draft:new' instead of
-    // the correct per-post key, causing cross-contamination.
-    const key = draftKey.value
-    autoSaveTimer = setTimeout(() => {
-      if (isDirty.value) {
-        draftStore.save(key, {
-          frontmatter: post.frontmatter,
-          frontmatterRaw: frontmatterRaw.value,
-          content: post.content,
-          savedAt: new Date().toISOString(),
-        }).catch(() => {})
-      }
-    }, 3000)
-  },
-  { deep: true },
-)
 </script>
