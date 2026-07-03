@@ -633,7 +633,7 @@ apiRouter.post('/posts', requireAuth, async (c) => {
   }
 
   const { owner, name, defaultBranch: _defaultBranch } = session.selectedRepo
-  const { postsDir, layout, extensions, frontmatterDefaults, commitMessageTemplate } =
+  const { postsDir, layout, extensions, commitMessageTemplate } =
     session.repoConfig
   const token = session.githubToken
 
@@ -685,41 +685,28 @@ apiRouter.post('/posts', requireAuth, async (c) => {
   }
 
   const content = body.content || ''
+  const frontmatterRaw = (body.frontmatterRaw || '').trim()
 
-  // If the client sent raw YAML frontmatter, use it verbatim — no
-  // parse→serialize round-trip that would alter formatting/quotes.
+  // Validate raw YAML is parseable
   let frontmatter: Record<string, unknown>
-  let raw: string
-
-  const frontmatterRaw = body.frontmatterRaw?.trim()
-  if (frontmatterRaw) {
-    // Validate that the raw YAML is parseable
-    try {
-      const parsed = load(frontmatterRaw)
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        return c.json({
-          ok: false,
-          error: { code: 'VALIDATION_ERROR', message: 'Frontmatter 必须是一个 YAML 对象' },
-        } satisfies ApiResponse, 400)
-      }
-      frontmatter = parsed as Record<string, unknown>
-    } catch {
+  try {
+    const parsed = load(frontmatterRaw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return c.json({
         ok: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Frontmatter YAML 格式错误' },
+        error: { code: 'VALIDATION_ERROR', message: 'Frontmatter 必须是一个 YAML 对象' },
       } satisfies ApiResponse, 400)
     }
-    // Use the raw YAML as-is — preserves the user's exact formatting
-    raw = `---\n${frontmatterRaw}\n---\n\n${content}`
-  } else {
-    // Legacy path: build frontmatter from defaults + provided object
-    frontmatter = {
-      ...frontmatterDefaults,
-      ...(body.frontmatter || {}),
-    }
-    if (!frontmatter.published) frontmatter.published = new Date().toISOString()
-    raw = serializePost(frontmatter, content)
+    frontmatter = parsed as Record<string, unknown>
+  } catch {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Frontmatter YAML 格式错误' },
+    } satisfies ApiResponse, 400)
   }
+
+  // Write raw YAML verbatim — no parse→serialize round-trip
+  const raw = `---\n${frontmatterRaw}\n---\n\n${content}`
 
   // Commit message
   const title = typeof frontmatter.title === 'string' ? frontmatter.title : slugFromPath(filePath)
@@ -831,41 +818,30 @@ apiRouter.put('/posts/*', requireAuth, async (c) => {
     throw e
   }
 
-  const { frontmatter: currentFm, content: currentBody } = parseFrontmatter(existing.content)
+  const { content: currentBody } = parseFrontmatter(existing.content)
   const newContent = body.content !== undefined ? body.content : currentBody
+  const frontmatterRaw = (body.frontmatterRaw || '').trim()
 
+  // Validate raw YAML is parseable
   let mergedFm: Record<string, unknown>
-  let raw: string
-
-  const frontmatterRaw = body.frontmatterRaw?.trim()
-  if (frontmatterRaw) {
-    // Client sent raw YAML — validate and use verbatim
-    try {
-      const parsed = load(frontmatterRaw)
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        return c.json({
-          ok: false,
-          error: { code: 'VALIDATION_ERROR', message: 'Frontmatter 必须是一个 YAML 对象' },
-        } satisfies ApiResponse, 400)
-      }
-      mergedFm = parsed as Record<string, unknown>
-    } catch {
+  try {
+    const parsed = load(frontmatterRaw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return c.json({
         ok: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Frontmatter YAML 格式错误' },
+        error: { code: 'VALIDATION_ERROR', message: 'Frontmatter 必须是一个 YAML 对象' },
       } satisfies ApiResponse, 400)
     }
-    // Use raw YAML as-is — preserves user's exact formatting
-    raw = `---\n${frontmatterRaw}\n---\n\n${newContent}`
-  } else {
-    // Legacy path: merge frontmatter objects + serialize
-    mergedFm = body.frontmatter
-      ? { ...currentFm, ...body.frontmatter }
-      : currentFm
-    // Auto-update `updated` timestamp
-    mergedFm.updated = new Date().toISOString()
-    raw = serializePost(mergedFm, newContent)
+    mergedFm = parsed as Record<string, unknown>
+  } catch {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Frontmatter YAML 格式错误' },
+    } satisfies ApiResponse, 400)
   }
+
+  // Write raw YAML verbatim — no parse→serialize round-trip
+  const raw = `---\n${frontmatterRaw}\n---\n\n${newContent}`
 
   const title = typeof mergedFm.title === 'string' ? mergedFm.title : slugFromPath(filePath)
   const commitMessage =
