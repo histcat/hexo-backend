@@ -437,7 +437,8 @@ async function loadPost(postPath: string) {
   if (!post.frontmatter.title) {
     post.frontmatter.title = post.name.replace(/\.[^.]+$/, '')
   }
-  frontmatterRaw.value = fmToYaml(post.frontmatter)
+  // Use the raw YAML from the server so we don't alter formatting
+  frontmatterRaw.value = p.frontmatterRaw || fmToYaml(post.frontmatter)
   yamlError.value = ''
 }
 

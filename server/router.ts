@@ -582,6 +582,11 @@ apiRouter.get('/posts/*', requireAuth, async (c) => {
   const nameParts = filePath.split('/')
   const fileName = nameParts[nameParts.length - 1]
 
+  // Extract raw YAML frontmatter string so the client can display it
+  // verbatim (avoiding a parse→dump round-trip that adds quotes).
+  const fmMatch = file.content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+  const frontmatterRaw = fmMatch ? fmMatch[1] : ''
+
   const post = {
     path: filePath,
     name: fileName,
@@ -589,6 +594,7 @@ apiRouter.get('/posts/*', requireAuth, async (c) => {
     size: new TextEncoder().encode(file.content).length,
     ext: fileName.endsWith('.mdx') ? ('mdx' as const) : ('md' as const),
     frontmatter,
+    frontmatterRaw,
     content,
   }
 

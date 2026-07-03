@@ -420,6 +420,8 @@ export interface PostSummary {
 export interface Post extends PostSummary {
   content: string
   frontmatter: Record<string, unknown>
+  /** Raw YAML frontmatter string, preserved verbatim from the file. */
+  frontmatterRaw: string
 }
 
 // ── Config file types ────────────────────────────────────────────
