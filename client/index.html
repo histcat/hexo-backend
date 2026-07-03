@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Hexo Editor" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>hexo-backend — Blog Editor</title>
+    <!-- Prevent flash of wrong theme: apply dark class before first paint -->
+    <script>
+      ;(function(){
+        try {
+          var stored = localStorage.getItem('hexo-editor:dark-mode')
+          if (stored === 'true' || (stored === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+          }
+        } catch(e) {}
+      })()
+    </script>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Mobile: Safe area insets (notched phones) ────────────────── */
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ── Mobile: Larger touch targets ─────────────────────────────── */
+
+@media (max-width: 767px) {
+  /* Increase tap area for toolbar buttons */
+  button,
+  [role='button'],
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* But smaller for inline items */
+  .touch-sm {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}
+
+/* ── Mobile: Prevent zoom on input focus (iOS) ────────────────── */
+
+@media (max-width: 767px) {
+  input[type='text'],
+  input[type='search'],
+  input[type='number'],
+  input[type='datetime-local'],
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
+}
+
+/* ── Mobile: Keyboard-safe editor ─────────────────────────────── */
+
+.mobile-keyboard-safe {
+  /* On mobile, limit editor height so keyboard doesn't hide it */
+}
+
+@media (max-width: 767px) {
+  .mobile-editor-container {
+    /* Make editor fill available space without overflowing when keyboard opens */
+    max-height: calc(100vh - 120px);
+  }
+}
+
+/* ── Mobile: Overscroll & pull-to-refresh ─────────────────────── */
+
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Mobile: Active states for touch ──────────────────────────── */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices, use active instead */
+  .hover\:bg-gray-100:active {
+    background-color: rgb(243 244 246);
+  }
+  .hover\:bg-gray-200:active {
+    background-color: rgb(229 231 235);
+  }
+  .hover\:border-blue-300:active {
+    border-color: rgb(147 197 253);
+  }
+}
+
+/* ── Prose overrides for preview ───────────────────────────────── */
+
+.prose pre {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── KaTeX dark mode overrides ────────────────────────────────── */
+
+.dark .katex {
+  color: rgb(229 231 235); /* gray-200 */
+}
+
+.dark .katex .mord,
+.dark .katex .mbin,
+.dark .katex .mrel,
+.dark .katex .mopen,
+.dark .katex .mclose,
+.dark .katex .mpunct,
+.dark .katex .minner {
+  color: rgb(229 231 235);
+}
+
+/* ── Scrollbar styling ────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(209 213 219);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(156 163 175);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(75 85 99); /* gray-600 */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128); /* gray-500 */
+}
