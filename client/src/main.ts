@@ -1,13 +1,20 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import { routes } from './router'
+import { routes, authGuard } from './router'
 import { draftStore } from './composables/useDraftStore'
 import './style.css'
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// Global auth guard: redirect unauthenticated users to /login
+router.beforeEach(async (to) => {
+  const result = await authGuard(to.path)
+  if (typeof result === 'string') return result
+  return true
 })
 
 const app = createApp(App)

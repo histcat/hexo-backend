@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="renderedHtml"
-    class="prose prose-sm dark:prose-invert max-w-none overflow-y-auto p-4 prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-1 prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm dark:prose-code:bg-gray-800 dark:prose-code:text-gray-300 prose-pre:code:bg-transparent prose-pre:code:p-0 prose-pre:code:rounded-none prose-img:rounded-lg prose-a:text-blue-600 dark:prose-a:text-blue-400"
+    class="prose prose-sm dark:prose-invert max-w-none overflow-y-auto p-4 prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-1 prose-img:rounded-lg prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:bg-slate-800 dark:prose-pre:text-gray-200 dark:prose-pre:border-slate-700"
     v-html="renderedHtml"
   />
   <div v-else class="flex items-center justify-center p-8 text-sm text-gray-400">
@@ -12,6 +12,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { marked } from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.min.css'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 
@@ -19,10 +21,52 @@ const props = defineProps<{
   content: string
 }>()
 
+// ── Syntax highlighting ──────────────────────────────────────────
+
+// Cache the hljs result to avoid re-highlighting identical code
+const hlCache = new Map<string, string>()
+
+function highlight(code: string, lang: string): string {
+  const cacheKey = `${lang}\x00${code}`
+  const cached = hlCache.get(cacheKey)
+  if (cached) return cached
+
+  try {
+    if (lang && hljs.getLanguage(lang)) {
+      const result = hljs.highlight(code, { language: lang }).value
+      hlCache.set(cacheKey, result)
+      return result
+    }
+  } catch {
+    /* fall through to auto-detection */
+  }
+
+  try {
+    const result = hljs.highlightAuto(code).value
+    hlCache.set(cacheKey, result)
+    return result
+  } catch {
+    const escaped = escapeHtml(code)
+    hlCache.set(cacheKey, escaped)
+    return escaped
+  }
+}
+
 // Configure marked
 marked.setOptions({
   breaks: true,
   gfm: true,
+})
+
+// Use the highlight option on marked
+marked.use({
+  renderer: {
+    code(this: unknown, { text, lang }: { text: string; lang?: string }): string {
+      const highlighted = highlight(text, lang || '')
+      const langAttr = lang ? ` class="language-${escapeHtml(lang)}"` : ''
+      return `<pre><code${langAttr}>${highlighted}</code></pre>\n`
+    },
+  },
 })
 
 // ── Math rendering ────────────────────────────────────────────────

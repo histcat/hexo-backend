@@ -17,8 +17,8 @@
           v-if="post.frontmatter.title !== undefined"
           :value="post.frontmatter.title as string"
           @input="onTitleInput"
-          placeholder="文章标题"
-          class="w-full truncate border-0 bg-transparent text-sm font-semibold text-gray-900 placeholder-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder-gray-500"
+          placeholder="✏️ 输入文章标题..."
+          class="w-full rounded-md border border-dashed border-gray-300 bg-gray-50/50 px-2.5 py-1.5 text-base font-semibold text-gray-900 placeholder-gray-300 hover:border-gray-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-100 dark:placeholder-gray-500 dark:hover:border-gray-500 dark:focus:border-blue-500 dark:focus:bg-gray-800"
         />
         <span v-else class="text-sm text-gray-400 dark:text-gray-500">
           {{ isNew ? '新建文章' : post.name }}
@@ -368,6 +368,49 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
 })
 
+// Watch for route query changes (e.g. navigating from one post to another,
+// or from a post to "new post"). Vue reuses the same component for /editor,
+// so we must manually reinitialize state when the query changes.
+let routeReady = false
+watch(
+  () => route.query.path,
+  async (newPath) => {
+    if (!routeReady) {
+      routeReady = true
+      return // initial load handled by onMounted
+    }
+
+    // Cancel any pending auto-save BEFORE we touch state, so the
+    // timer callback doesn't see a half-mutated post and save stale
+    // data under the wrong draft key.
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer)
+      autoSaveTimer = null
+    }
+
+    loading.value = true
+    error.value = ''
+    menuOpen.value = false
+    showRename.value = false
+    showDelete.value = false
+    saveState.value = 'idle'
+
+    try {
+      if (newPath) {
+        await loadPost(newPath as string)
+      } else {
+        // fresh=true: user explicitly navigated to "new post" —
+        // purge any stale draft so we get a clean slate.
+        await initNewPost(true)
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : '加载编辑器失败'
+    } finally {
+      loading.value = false
+    }
+  },
+)
+
 // ── Load / Init ────────────────────────────────────────────────
 
 function fmToYaml(fm: Record<string, unknown>): string {
@@ -398,15 +441,34 @@ async function loadPost(postPath: string) {
   yamlError.value = ''
 }
 
-async function initNewPost() {
+/**
+ * Initialize a blank new-post form.
+ *
+ * @param fresh - When `true` (user explicitly clicked "New Post"),
+ *   delete any stale draft first so we get a truly clean slate.
+ *   When `false`/omitted (initial page load with no path), attempt
+ *   draft recovery from IndexedDB so unsaved work isn't lost.
+ */
+async function initNewPost(fresh = false) {
+  // Purge any lingering "new post" draft before setting up blank state.
+  // This prevents cross-contamination when navigating from an existing
+  // post (whose auto-save timer may have fired during the transition
+  // and written stale data under the 'hexo:draft:new' key).
+  if (fresh) {
+    await draftStore.delete('hexo:draft:new').catch(() => {})
+  }
+
   const defaults = config.value?.frontmatterDefaults || {}
   post.path = ''
   post.name = 'new-post.md'
   post.sha = ''
   post.ext = 'md'
   post.frontmatter = {
-    ...defaults,
+    title: '',
+    category: '',
     published: new Date().toISOString(),
+    tags: [],
+    ...defaults, // repo config defaults take precedence
   }
   post.content = ''
   originalSha = ''
@@ -415,16 +477,19 @@ async function initNewPost() {
   frontmatterRaw.value = fmToYaml(post.frontmatter)
   yamlError.value = ''
 
-  // Restore draft from IndexedDB
-  try {
-    const saved = await draftStore.load('hexo:draft:new')
-    if (saved) {
-      if (saved.frontmatter) post.frontmatter = saved.frontmatter as Record<string, unknown>
-      if (saved.frontmatterRaw) frontmatterRaw.value = saved.frontmatterRaw as string
-      if (saved.content) post.content = saved.content as string
+  // Draft recovery: only when NOT a fresh creation (initial page load).
+  // When fresh=true we already deleted the draft above, so skip load.
+  if (!fresh) {
+    try {
+      const saved = await draftStore.load('hexo:draft:new')
+      if (saved) {
+        if (saved.frontmatter) post.frontmatter = saved.frontmatter as Record<string, unknown>
+        if (saved.frontmatterRaw) frontmatterRaw.value = saved.frontmatterRaw as string
+        if (saved.content) post.content = saved.content as string
+      }
+    } catch {
+      /* ignore */
     }
-  } catch {
-    /* ignore */
   }
 }
 
@@ -702,9 +767,14 @@ watch(
   [() => post.content, () => post.frontmatter, () => frontmatterRaw.value],
   () => {
     if (autoSaveTimer) clearTimeout(autoSaveTimer)
+    // Capture draft key NOW — not inside the setTimeout callback.
+    // If the route changes between now and when the timer fires,
+    // `draftKey.value` would resolve to 'hexo:draft:new' instead of
+    // the correct per-post key, causing cross-contamination.
+    const key = draftKey.value
     autoSaveTimer = setTimeout(() => {
       if (isDirty.value) {
-        draftStore.save(draftKey.value, {
+        draftStore.save(key, {
           frontmatter: post.frontmatter,
           frontmatterRaw: frontmatterRaw.value,
           content: post.content,
