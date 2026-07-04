@@ -1,5 +1,0 @@
-# Cloudflare Pages configuration
-# Only the bare minimum — no Workers-specific fields (name, main, vars, dev).
-# Everything else is configured in the Cloudflare Dashboard.
-pages_build_output_dir = "client/dist"
-compatibility_date = "2024-12-01"
