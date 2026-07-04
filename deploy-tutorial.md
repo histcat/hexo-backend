@@ -30,6 +30,7 @@ your-repo/
 │   ├── src/
 │   ├── package.json
 │   └── vite.config.ts
+├── wrangler.toml          ← 只有 pages_build_output_dir 和 compatibility_date 两行
 ├── package.json
 └── tsconfig.json
 ```
@@ -131,13 +132,18 @@ npx wrangler pages dev client/dist
 
 ## 常见问题
 
-### 部署时报错 "You've run a Workers-specific command in a Pages project"
+### 部署时报错 "You've run a Workers-specific command in a Pages project" 或 "Missing entry-point to Worker script"
 
-**原因**：仓库中残留了 `wrangler.toml` 文件，且包含 `name`、`[vars]`、`[dev]` 等 Workers 专用字段。Cloudflare 构建系统会误判项目类型。
+**原因**：`wrangler.toml` 包含了 Workers 专用字段（`name`、`main`、`[vars]`、`[dev]` 等），导致 Cloudflare 误判项目类型。
 
-**解决**：确保仓库根目录**没有** `wrangler.toml` 文件。Dashboard 部署不需要它——所有配置都在网页上完成。
+**解决**：确保仓库根目录的 `wrangler.toml` **只含下面两行**，没有其他字段：
 
-> 本地开发如果要用 `wrangler pages dev`，可以创建一个只含 `[dev]` 的 `wrangler.toml` 文件放在 `.gitignore` 里，不要提交到仓库。
+```toml
+pages_build_output_dir = "client/dist"
+compatibility_date = "2024-12-01"
+```
+
+> 缺少 `wrangler.toml` 也会触发这个错误——Cloudflare 需要这个文件来判断项目结构。但里面的 Workers 字段（`name`、`main`、`[vars]`）会起反作用。
 
 ### 部署成功但页面空白 / API 返回 404
 
