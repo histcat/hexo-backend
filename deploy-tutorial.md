@@ -30,7 +30,6 @@ your-repo/
 │   ├── src/
 │   ├── package.json
 │   └── vite.config.ts
-├── wrangler.toml
 ├── package.json
 └── tsconfig.json
 ```
@@ -60,7 +59,7 @@ your-repo/
 | **Build output directory** | `client/dist` |
 | **Root directory** | `/`（留空，默认为仓库根目录） |
 
-> **重要**：由于项目有根目录的 `package.json`（Hono / jose / js-yaml 等服务端依赖）和 `client/package.json`（Vue 前端依赖），构建时需要分两步。Cloudflare Pages 会自动执行根目录的 `npm install`，所以 `wrangler.toml` 中的 `pages_build_output_dir` 已经指定了 `client/dist`。
+> Cloudflare Pages 会自动在根目录执行 `npm install`，所以 Functions 的依赖（hono / jose / js-yaml）会被安装。Build Command 只需确保前端也被构建即可。
 
 ---
 
@@ -127,3 +126,24 @@ npx wrangler pages dev client/dist
 ```
 
 浏览器打开 `http://localhost:8788`。
+
+---
+
+## 常见问题
+
+### 部署时报错 "You've run a Workers-specific command in a Pages project"
+
+**原因**：仓库中残留了 `wrangler.toml` 文件，且包含 `name`、`[vars]`、`[dev]` 等 Workers 专用字段。Cloudflare 构建系统会误判项目类型。
+
+**解决**：确保仓库根目录**没有** `wrangler.toml` 文件。Dashboard 部署不需要它——所有配置都在网页上完成。
+
+> 本地开发如果要用 `wrangler pages dev`，可以创建一个只含 `[dev]` 的 `wrangler.toml` 文件放在 `.gitignore` 里，不要提交到仓库。
+
+### 部署成功但页面空白 / API 返回 404
+
+检查 Cloudflare Dashboard → 项目 Settings → Functions 中 **Compatibility date** 是否太旧。建议设为 `2024-12-01` 或更新。
+
+### 登录时报错 "JWT_SECRET environment variable is required"
+
+环境变量没配。回到项目 Settings → Environment Variables，确认已添加 `JWT_SECRET`。
+
