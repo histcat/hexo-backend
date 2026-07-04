@@ -13,8 +13,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
-    "types": ["@cloudflare/workers-types"]
+    "jsxImportSource": "hono/jsx"
   },
   "include": [
     "functions/**/*.ts",
