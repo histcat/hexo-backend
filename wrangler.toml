@@ -1,0 +1,18 @@
+# hexo-backend — Cloudflare Pages + Functions
+name = "hexo-backend"
+compatibility_date = "2024-12-01"
+
+# ── Pages config ──────────────────────────────────
+# Build the Vue SPA and serve it as the static site.
+# functions/ directory contains the API backend.
+pages_build_output_dir = "client/dist"
+
+# ── Environment variables ─────────────────────────
+# Set the real secret with:
+#   npx wrangler secret put JWT_SECRET
+[vars]
+JWT_SECRET = "change-me-in-production"
+
+# ── Dev ────────────────────────────────────────────
+[dev]
+port = 8788

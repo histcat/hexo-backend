@@ -1,6 +1,6 @@
 // ── Hono Context variable augmentation ──────────────────────────
 
-declare module 'jsr:@hono/hono' {
+declare module 'hono' {
   interface ContextVariableMap {
     session: import('./types.ts').Session
   }

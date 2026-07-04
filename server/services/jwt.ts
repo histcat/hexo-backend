@@ -11,6 +11,7 @@
 
 import { SignJWT, jwtVerify } from 'jose'
 import type { RepoConfig } from '../types.ts'
+import { getJwtSecret } from './env.ts'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -18,7 +19,7 @@ const decoder = new TextDecoder()
 // ── Helpers ──────────────────────────────────────────────────────
 
 function requireSecret(): string {
-  const secret = Deno.env.get('JWT_SECRET')
+  const secret = getJwtSecret()
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required')
   }

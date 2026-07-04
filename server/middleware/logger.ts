@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from 'jsr:@hono/hono'
+import type { MiddlewareHandler } from 'hono'
 import { lastRateLimit } from '../services/github.ts'
 
 /**

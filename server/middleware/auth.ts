@@ -12,8 +12,8 @@
  *   const session = c.get('session') as Session
  */
 
-import type { MiddlewareHandler } from 'jsr:@hono/hono'
-import { getCookie, deleteCookie } from 'jsr:@hono/hono/cookie'
+import type { MiddlewareHandler } from 'hono'
+import { getCookie, deleteCookie } from 'hono/cookie'
 import { verifyJwt, decryptToken } from '../services/jwt.ts'
 import type { Session } from '../types.ts'
 

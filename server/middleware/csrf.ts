@@ -9,8 +9,8 @@
  * Cookie 为非 HttpOnly（允许 JS 读取），SameSite=Lax。
  */
 
-import type { MiddlewareHandler } from 'jsr:@hono/hono'
-import { getCookie, setCookie } from 'jsr:@hono/hono/cookie'
+import type { MiddlewareHandler } from 'hono'
+import { getCookie, setCookie } from 'hono/cookie'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -48,16 +48,12 @@ export function setCsrfCookie(c: Parameters<MiddlewareHandler>[0]): string {
  * Helper: set the CSRF cookie on a context. Call this from route handlers.
  * We use this pattern because Hono's setCookie needs the raw context.
  */
-function isSecureEnv(): boolean {
-  return Deno.env.get('DENO_ENV') === 'production'
-}
-
 export function applyCsrfCookie(c: Parameters<MiddlewareHandler>[0]): string {
   const token = generateCsrfToken()
   setCookie(c, CSRF_COOKIE, token, {
     path: '/',
-    secure: isSecureEnv(),
-    sameSite: isSecureEnv() ? 'Lax' : 'Lax',
+    secure: true,
+    sameSite: 'Lax',
     httpOnly: false, // Frontend needs to read it for the header
     maxAge: 86400,   // 24 hours
   })

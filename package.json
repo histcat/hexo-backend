@@ -1,0 +1,21 @@
+{
+  "name": "hexo-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev client/dist",
+    "build": "cd client && npm run build",
+    "deploy": "npm run build && wrangler pages deploy client/dist"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "jose": "^5.10.0",
+    "js-yaml": "^4.1.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241201.0",
+    "@types/js-yaml": "^4.0.9",
+    "typescript": "^6.0.3",
+    "wrangler": "^3.99.0"
+  }
+}

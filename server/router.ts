@@ -1,9 +1,10 @@
-import { Hono } from 'jsr:@hono/hono'
-import { setCookie, deleteCookie } from 'jsr:@hono/hono/cookie'
+import { Hono } from 'hono'
+import { setCookie, deleteCookie } from 'hono/cookie'
 import { requestLogger } from './middleware/logger.ts'
 import { requireAuth, AUTH_COOKIE } from './middleware/auth.ts'
 import { applyCsrfCookie, csrfGuard } from './middleware/csrf.ts'
 import { signJwt, encryptToken } from './services/jwt.ts'
+import { isProduction } from './services/env.ts'
 import {
   fetchGitHubUser,
   listUserRepos,
@@ -41,7 +42,7 @@ import type { ApiResponse, UserInfo, RepoRef, RepoConfig, PostSummary, ConfigFil
  * @param c - Hono context (from inside the sub-router)
  * @param routePrefix - e.g. '/posts/' or '/config-files/'
  */
-function getWildcardPath(c: import('jsr:@hono/hono').Context, routePrefix: string): string {
+function getWildcardPath(c: import('hono').Context, routePrefix: string): string {
   return decodeURIComponent(c.req.path.slice(routePrefix.length))
 }
 
@@ -160,7 +161,7 @@ apiRouter.post('/auth/login', async (c) => {
     encryptedToken,
   })
 
-  const isProd = Deno.env.get('DENO_ENV') === 'production'
+  const isProd = isProduction()
 
   // Set HttpOnly Secure cookie
   setCookie(c, AUTH_COOKIE, jwt, {
@@ -328,7 +329,7 @@ apiRouter.post('/repo/select', requireAuth, async (c) => {
     repoConfig,
   })
 
-  const isProd = Deno.env.get('DENO_ENV') === 'production'
+  const isProd = isProduction()
   setCookie(c, AUTH_COOKIE, newJwt, {
     path: '/',
     httpOnly: true,
