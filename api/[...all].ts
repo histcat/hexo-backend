@@ -1,5 +1,5 @@
 /**
- * Vercel serverless function entry (optional catch-all).
+ * Vercel serverless function entry (required catch-all).
  *
  * Every /api/* request is forwarded to the shared Hono app, so the API
  * code is identical between local dev and Vercel. Static files

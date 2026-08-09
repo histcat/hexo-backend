@@ -2,7 +2,7 @@
  * Shared Hono application (API only).
  *
  * Used by:
- *   - Vercel serverless function: api/[[...all]].ts
+ *   - Vercel serverless function: api/[...all].ts
  *   - Local dev server:           server/dev.ts
  *
  * Static files (client/dist) and the SPA fallback are handled by the host:

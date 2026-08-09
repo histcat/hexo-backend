@@ -106,7 +106,7 @@ npm run dev
 ```
 hexo-backend/
 ├── api/
-│   └── [[...all]].ts        # Vercel Serverless Function 入口，转发所有 /api/* 请求
+│   └── [...all].ts          # Vercel Serverless Function 入口（catch-all），转发所有 /api/* 请求
 ├── server/                  # 后端（与部署平台无关的 Hono 应用）
 │   ├── app.ts               # Hono 应用入口（环境变量注入、CORS、路由挂载）
 │   ├── dev.ts               # 本地开发服务器（@hono/node-server，默认 8000）
@@ -191,7 +191,7 @@ hexo-backend/
 
 ### 部署后页面能打开但接口 404
 
-确认 `vercel.json` 存在且 `api/[[...all]].ts` 未被删除；`/api/*` 请求由该 Serverless Function 处理，其余路径回退到 `index.html`（SPA 路由）。
+确认 `vercel.json` 存在且 `api/[...all].ts` 未被删除；`/api/*` 请求由该 Serverless Function 处理，其余路径回退到 `index.html`（SPA 路由）。
 
 ### 登录后操作报 CSRF 校验失败
 
