@@ -2,10 +2,16 @@
   "name": "hexo-backend",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "cd client && npm install && npm run build",
-    "deploy": "npm run build && wrangler deploy"
+    "dev": "npm run dev:api",
+    "dev:api": "tsx watch server/dev.ts",
+    "build": "npm run build:client",
+    "build:client": "cd client && npm install && npm run build",
+    "typecheck": "tsc",
+    "deploy": "npm run build && vercel --prod"
   },
   "dependencies": {
     "hono": "^4.7.0",
@@ -13,9 +19,12 @@
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241201.0",
+    "@hono/node-server": "^1.13.7",
     "@types/js-yaml": "^4.0.9",
-    "typescript": "^5.7.0",
-    "wrangler": "^3.99.0"
+    "@types/node": "^22.10.2",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vercel": "^39.1.1"
   }
 }

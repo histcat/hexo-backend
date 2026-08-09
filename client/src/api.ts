@@ -1,7 +1,7 @@
 /**
- * API client for communicating with the Deno backend.
- * All requests go to /api/* which is proxied to Deno in dev,
- * or served by the same origin in production.
+ * API client for communicating with the Hono backend.
+ * All requests go to /api/* which is proxied to the API server
+ * in local dev (Vite), or served by the same origin in production (Vercel).
  *
  * CSRF: On initialization, fetches /api/config to obtain a CSRF token.
  * The token is sent in X-CSRF-Token header on all mutation requests.

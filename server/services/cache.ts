@@ -2,7 +2,7 @@
  * Simple TTL (Time-To-Live) in-memory cache.
  *
  * Used for caching expensive GitHub API results within a single
- * Deno Deploy isolate lifetime. Cache is cleared on cold start.
+ * serverless function instance. Cache is cleared on cold start.
  *
  * Typical TTLs:
  * - Repo tree: 3 minutes

@@ -1,36 +1,103 @@
 # hexo-backend — Astro 博客在线编辑器
 
-给存放在 GitHub 仓库里的 Astro 博客（hexo 风格 frontmatter）提供一个随时随地打开即可编辑的在线界面。
+给存放在 GitHub 仓库里的 Astro 博客（hexo 风格 frontmatter）提供一个随时随地在浏览器里打开即可编辑的在线界面：登录后选择仓库，直接在浏览器里增删改文章、编辑配置文件、上传图片，所有变更通过 GitHub API 提交回你的博客仓库。
 
-- 后端：Deno Deploy + Hono
-- 前端：Vue 3 + TailwindCSS
-- 鉴权：GitHub Personal Access Token（用户自备），JWT HttpOnly Cookie
+- 后端：Hono（Vercel Serverless Function，Node.js 运行时）
+- 前端：Vue 3 + Vite + TailwindCSS
+- 鉴权：GitHub Personal Access Token（用户自备），会话使用 JWT HttpOnly Cookie，GitHub Token 经 AES-256-GCM 加密后存入 JWT
+- 部署：Vercel 一键部署，前端静态资源与 API 同源托管，无需自己购买服务器
 
 ---
 
 ## 目录
 
-- [环境要求](#环境要求)
-- [项目结构](#项目结构)
+- [一键部署到 Vercel](#一键部署到-vercel)
+- [环境变量](#环境变量)
 - [本地开发](#本地开发)
-  - [启动后端](#启动后端)
-  - [启动前端](#启动前端)
-  - [TLS 证书问题（Windows）](#tls-证书问题windows)
-- [完整测试流程](#完整测试流程)
-  - [第一步：创建 GitHub Personal Access Token](#第一步创建-github-personal-access-token)
-  - [第二步：启动服务](#第二步启动服务)
-  - [第三步：浏览器端操作](#第三步浏览器端操作)
-  - [第四步：用 curl 测试 API](#第四步用-curl-测试-api)
-- [部署到 Deno Deploy](#部署到-deno-deploy)
-- [常用命令](#常用命令)
+- [项目结构](#项目结构)
+- [使用说明](#使用说明)
+- [安全说明](#安全说明)
+- [常见问题](#常见问题)
 
 ---
 
-## 环境要求
+## 一键部署到 Vercel
 
-- **Deno** ≥ 2.x（[安装指南](https://deno.com/)）
-- **Node.js** ≥ 18 + npm（前端 Vite 构建用）
-- **GitHub 账号** + 一个有写权限的博客仓库
+点击下方按钮，把仓库导入 Vercel 即可完成部署：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fhexo-backend&env=JWT_SECRET)
+
+> 按钮链接里的 `your-username/hexo-backend` 是占位地址。发布前请把它替换为你自己的 GitHub 仓库地址（URL 编码后的完整地址），或直接复制下面的链接到浏览器后修改：
+>
+> `https://vercel.com/new/clone?repository-url=<你的仓库地址>&env=JWT_SECRET`
+
+部署步骤：
+
+1. 点击上方按钮，用 GitHub 账号登录 Vercel；
+2. Vercel 会自动导入仓库并读取 `vercel.json` 中的构建配置；
+3. 按向导提示填写环境变量 `JWT_SECRET`（至少 32 位的随机字符串）；
+4. 点击 **Deploy**，等待 1~2 分钟即可访问部署好的地址。
+
+部署完成后，把 `JWT_SECRET` 保存好。Vercel 的 Preview 环境会为每次提交自动生成预览地址，Production 环境对应你的正式域名。
+
+### 手动部署（命令行）
+
+```bash
+npm install
+npm run build        # 构建前端到 client/dist
+npx vercel login
+npx vercel --prod    # 或 npm run deploy
+```
+
+### 手动部署（Dashboard）
+
+1. 打开 [Vercel Dashboard](https://vercel.com) → **Add New** → **Project**；
+2. 导入本仓库，框架选择 **Other**（`vercel.json` 已配置好 Build Command 与 Output Directory）；
+3. 在 **Environment Variables** 中添加 `JWT_SECRET`；
+4. 点击 **Deploy**。
+
+---
+
+## 环境变量
+
+| 变量 | 必填 | 说明 |
+| --- | --- | --- |
+| `JWT_SECRET` | 是 | 用于签发会话 JWT 并加密 GitHub Token。至少 32 位随机字符串，修改后所有已登录会话立即失效 |
+
+生成一个随机密钥：
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Vercel 会自动注入 `VERCEL_ENV` / `NODE_ENV`，无需手动配置。
+
+---
+
+## 本地开发
+
+前置要求：Node.js >= 18.17、npm。
+
+```bash
+# 1. 安装根目录依赖
+npm install
+
+# 2. 配置环境变量
+cp .env.example .env
+# Windows: copy .env.example .env
+
+# 3. 启动 API 服务（http://localhost:8000）
+npm run dev:api
+
+# 4. 另开一个终端，安装并启动前端（http://localhost:5173）
+cd client
+npm install
+npm run dev
+```
+
+浏览器打开 `http://localhost:5173`，Vite 会把 `/api` 请求代理到 `http://localhost:8000`，与生产环境同源调用保持一致。
+
+本地开发时的鉴权 Cookie 通过 `http://localhost` 生效（Chrome/Edge 将 localhost 视为安全上下文）；如遇到登录后立刻失效的问题，请确认浏览器允许 Cookie，或在 `server/services/env.ts` 中检查 `isProduction()` 的判定。
 
 ---
 
@@ -38,460 +105,107 @@
 
 ```
 hexo-backend/
-├── main.ts                  # Hono 入口，Deno Deploy fetch handler
-├── deno.json                # Deno 配置（tasks, imports）
-├── server/                  # 后端
-│   ├── router.ts            # 路由注册（所有 /api/* 端点）
-│   ├── middleware/           # 中间件（auth, csrf, logger）
-│   ├── services/            # 业务逻辑（github, jwt, frontmatter, config-scanner, cache）
+├── api/
+│   └── [[...all]].ts        # Vercel Serverless Function 入口，转发所有 /api/* 请求
+├── server/                  # 后端（与部署平台无关的 Hono 应用）
+│   ├── app.ts               # Hono 应用入口（环境变量注入、CORS、路由挂载）
+│   ├── dev.ts               # 本地开发服务器（@hono/node-server，默认 8000）
+│   ├── router.ts            # 全部 /api/* 端点（认证、仓库、文章、配置、媒体）
+│   ├── middleware/          # auth（JWT）、csrf（Double Submit Cookie）、logger
+│   ├── services/            # github、jwt、frontmatter、config-scanner、cache、env
 │   └── types.ts             # 共享类型定义
-├── client/                  # 前端 SPA（Vite + Vue 3）
-│   ├── src/
-│   │   ├── views/           # 页面组件（Login, Repos, Posts, Editor, ConfigEditor, Media）
-│   │   ├── components/      # 可复用组件（PostForm, MarkdownEditor, CodeEditor, ConfigForm...）
-│   │   ├── composables/     # 组合式函数（useDraftStore / IndexedDB 草稿）
-│   │   ├── router.ts        # Vue Router 路由
-│   │   └── api.ts           # 后端 API 调用封装
-│   └── public/              # PWA manifest + Service Worker
-└── tests/                   # 测试（待补充）
+├── client/                  # 前端 SPA（Vite + Vue 3 + TailwindCSS）
+│   └── src/
+│       ├── views/           # Login、Repos、Posts、Editor、ConfigEditor、Media
+│       ├── components/      # 可复用组件（Markdown 编辑器、代码编辑器、表单等）
+│       ├── composables/     # useDraftStore（IndexedDB 草稿）
+│       ├── router.ts        # Vue Router 路由
+│       └── api.ts           # 后端 API 调用封装
+├── vercel.json              # Vercel 构建 / 函数 / 路由配置
+├── package.json
+└── README.md
 ```
 
 ---
 
-## 快速开始
+## 使用说明
 
-### 1. 配置环境变量
+### 1. 登录
 
-```bash
-# 复制 .env.example 为 .env
-cp .env.example .env
+1. 打开部署后的地址，页面会自动跳转到 `/login`；
+2. 创建一个 GitHub Personal Access Token（[github.com/settings/tokens](https://github.com/settings/tokens)），勾选 **repo** 权限（完整仓库读写）；
+3. 粘贴 Token 并点击「登录」。后端会用该 Token 调用 GitHub API 验证身份，验证通过后签发 JWT 并写入 HttpOnly Cookie。
 
-# 生成一个随机的 JWT_SECRET（已有可跳过）
-deno eval "console.log(Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2,'0')).join(''))"
-# 把输出的字符串替换 .env 中的 JWT_SECRET 值
-```
+### 2. 选择仓库
 
-> `.env` 文件已加入 `.gitignore`，不会提交到仓库。Deno 需要 `--env-file=.env` 才会加载。
+1. 登录后显示你有写权限的所有仓库；
+2. 点击你的博客仓库（例如 `my-blog`）；
+3. 后端自动读取仓库根目录的 `.astro-editor.yml` 配置；没有该文件时使用默认配置（文章目录 `src/content/posts/`，folder 布局）。
 
-### 2. 启动后端
+### 3. 编辑文章
 
-```bash
-# 推荐：使用 deno task（已配置好 --env-file 和 TLS）
-deno task dev
+1. 文章列表显示配置目录下的所有 `.md` / `.mdx` 文件，支持按分类 / 标签筛选和搜索；
+2. 点击「新建文章」进入编辑器（新建模式），点击已有文章进入编辑模式；
+3. 左侧为 frontmatter 动态表单（字段由 `.astro-editor.yml` 定义）和 Markdown 编辑区，右侧为实时预览；
+4. 支持加粗、斜体、标题、链接、行内代码、代码块、列表、引用、图片上传等工具栏操作，`Ctrl+S` 保存；
+5. 每 3 秒自动将草稿保存到 IndexedDB（离线可用）；
+6. 支持重命名 / 移动 / 删除文章。
 
-# 或者手动指定：
-DENO_TLS_CA_STORE=system deno run --allow-net --allow-env --allow-read --env-file=.env --watch main.ts
+### 4. 编辑配置文件
 
-# 后端运行在 http://localhost:8000
-```
+1. 在文章列表页切换到「配置文件」Tab；
+2. 列表显示仓库中的 JSON / YAML / TOML 等配置文件；
+3. 在线编辑并保存，保存前会校验 JSON / YAML 语法。
 
-### 3. 启动前端
+### 5. 媒体管理
 
-```bash
-cd client
-npm install
-npm run dev
-
-# 前端运行在 http://localhost:5173
-# Vite 自动将 /api 请求代理到 localhost:8000
-```
-
-### TLS 证书问题（Windows）
-
-Windows 下 Deno 可能报 `invalid peer certificate: UnknownIssuer`，无法连接 `api.github.com`。这是因为 Deno 默认使用自带的 Mozilla 证书库，与某些 Windows 环境不兼容。
-
-**解决方案：** 启动时加 `DENO_TLS_CA_STORE=system` 使用系统证书（`deno task dev` 已内置）。
-
-验证 TLS 是否正常：
-
-```bash
-DENO_TLS_CA_STORE=system deno eval '
-  const res = await fetch("https://api.github.com")
-  console.log("GitHub API:", res.status)
-'
-# 输出：GitHub API: 200  ← 正常
-```
-
-验证 TLS 是否正常：
-
-```bash
-DENO_TLS_CA_STORE=system deno eval '
-  const res = await fetch("https://api.github.com")
-  console.log("GitHub API:", res.status)
-'
-# 输出：GitHub API: 200  ← 正常
-```
+1. 在「媒体」页浏览仓库中的图片（按配置的 `assetsPublicDir` 或 `postsDir` 扫描）；
+2. 支持图片上传（PNG / JPG / GIF / SVG / WebP / BMP，单文件不超过 10 MB），上传后自动返回 URL 可插入文章。
 
 ---
 
-## 完整测试流程
-
-### 第一步：创建 GitHub Personal Access Token
-
-1. 打开 https://github.com/settings/tokens
-2. 点击 **Generate new token (classic)**
-3. 设置一个名字（如 `hexo-backend`）
-4. 勾选 **repo** 权限（完整的仓库读写权限）
-5. 点击 **Generate token**
-6. 复制生成的 `ghp_xxxxxxxxxxxxxxxxxxxx`（**只显示一次，务必保存好**）
-
-> 这个 Token 就是你的"密码"。服务端会用它调用 GitHub API 读取/写入你的博客仓库。Token 只在服务端内存中存在，前端不可见，存入 HttpOnly Cookie 中。
-
-### 第二步：启动服务
-
-打开两个终端：
-
-**终端 1 — 后端：**
-
-```bash
-DENO_TLS_CA_STORE=system deno run --allow-net --allow-env --allow-read main.ts
-```
-
-看到 `Listening on http://localhost:8000/` 表示启动成功。
-
-**终端 2 — 前端：**
-
-```bash
-cd client
-npm run dev
-```
-
-看到 `http://localhost:5173/` 表示启动成功。
-
-### 第三步：浏览器端操作
-
-打开 `http://localhost:5173`，按以下流程操作：
-
-#### 3.1 登录
-
-1. 页面自动跳转到 `/login`
-2. 粘贴你的 GitHub PAT（`ghp_xxx`）
-3. 点击"登录"
-4. 后端验证 Token → 签发 JWT → 存入 HttpOnly Cookie → 跳转仓库列表
-
-#### 3.2 选择仓库
-
-1. 列表显示你有写权限的所有仓库
-2. 点击你的博客仓库（如 `my-blog`）
-3. 后端自动读取仓库根目录的 `.astro-editor.yml` 配置文件
-4. 如果仓库中没有这个文件，使用默认配置（文章目录 `src/content/posts/`，文件夹布局）
-
-#### 3.3 文章列表
-
-1. 显示 `src/content/posts/` 下所有 `.md` / `.mdx` 文件
-2. 顶部分类/标签筛选 + 搜索框
-3. 右侧 Tab 可切换「文章」/「配置文件」
-4. 点击"新建文章"跳转到编辑器（新建模式）
-5. 点击文章进入编辑器（编辑模式）
-
-#### 3.4 编辑文章
-
-1. **顶部标题栏**：返回、标题、保存状态、保存按钮、更多菜单（重命名/删除）
-2. **左侧**：动态 frontmatter 表单（字段由 `.astro-editor.yml` 定义）+ Markdown 编辑区（带格式工具栏）
-3. **右侧**：Markdown 实时预览
-4. **工具栏功能**：加粗、斜体、标题、链接、行内代码、代码块、列表、引用、图片上传
-5. **快捷键**：`Ctrl+S` 保存
-6. **自动草稿**：每 3 秒自动保存到 IndexedDB（离线可用）
-7. **图片上传**：点工具栏图片按钮 → 选择文件 → 自动上传并插入 `![alt](url)`
-
-#### 3.5 配置文件编辑
-
-1. 在文章列表页切换到「配置文件」Tab
-2. 列表显示仓库中的 JSON / YAML / TOML / 配置文件
-3. 点击进入配置编辑器
-4. **代码模式**：带行号的代码编辑器
-5. **表单模式**（JSON / YAML）：结构化表单视图，支持嵌套对象、数组增删
-
-#### 3.6 资源管理
-
-1. 顶栏"资源"按钮进入 `/media`
-2. 上传区域：拖拽或点击选择图片（支持 PNG / JPEG / GIF / SVG / WebP，最大 10 MB）
-3. 网格显示已上传的图片，可复制链接
-
-### 第四步：用 curl 测试 API
-
-如果你没有浏览器或想直接测试后端 API：
-
-```bash
-# ── 1. 获取 CSRF Token ──────────────────────────────────────────
-
-# CSRF 机制：Double Submit Cookie
-# 服务端在 /api/config 响应中同时返回 Cookie (hexo_csrf) 和 Body (csrfToken)
-# 后续所有非 GET 请求必须同时发送 Cookie 和 X-CSRF-Token Header，且值必须一致
-
-CSRF=$(curl -s http://localhost:8000/api/config \
-  | grep -o '"csrfToken":"[^"]*"' \
-  | sed 's/"csrfToken":"//;s/"//')
-
-echo "CSRF Token: $CSRF"
-
-
-# ── 2. 健康检查 ──────────────────────────────────────────────────
-
-curl -s http://localhost:8000/api/health | python3 -m json.tool
-# 返回: { "ok": true, "data": { "status": "ok", "runtime": "deno",
-#         "githubRateLimit": null, "warning": null } }
-
-
-# ── 3. 登录 ──────────────────────────────────────────────────────
-
-# 注意：CSRF Cookie 和 X-CSRF-Token Header 必须使用同一个 Token 值
-curl -v -s -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -d '{"token":"你的_ghp_xxx_TOKEN"}'
-
-# 成功响应（200）：
-# { "ok": true, "data": { "user": { "id": 12345, "login": "你的用户名", ... } } }
-# 同时 Set-Cookie: hexo_session=<JWT>; HttpOnly; Secure; SameSite=Lax
-# 后续请求自动携带此 Cookie
-
-# 失败响应（401）：
-# { "ok": false, "error": { "code": "TOKEN_INVALID", "message": "..." } }
-
-
-# ── 4. 获取当前用户信息 ──────────────────────────────────────────
-
-# 登录成功后，用 hexo_session Cookie 访问需要鉴权的端点
-curl -s -b /tmp/cookies http://localhost:8000/api/user
-
-
-# ── 5. 列出仓库 ──────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies http://localhost:8000/api/repos
-# 返回你有写权限的仓库列表
-
-
-# ── 6. 选择仓库 ──────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies -X POST http://localhost:8000/api/repo/select \
-  -H "Content-Type: application/json" \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -d '{"owner":"你的用户名","name":"你的博客仓库名"}'
-# 返回仓库配置和默认分支信息
-# 服务端重新签发 JWT，包含 selectedRepo + repoConfig
-
-
-# ── 7. 列出文章 ──────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies "http://localhost:8000/api/posts?page=1&pageSize=10"
-# 支持筛选：?tag=xxx&category=xxx&q=搜索关键词
-
-
-# ── 8. 读取单篇文章 ─────────────────────────────────────────────
-
-curl -s -b /tmp/cookies \
-  "http://localhost:8000/api/posts/src/content/posts/my-post/index.md"
-
-
-# ── 9. 新建文章（文件夹布局） ────────────────────────────────────
-
-curl -s -b /tmp/cookies -X POST http://localhost:8000/api/posts \
-  -H "Content-Type: application/json" \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -d '{
-    "path": "new-post",
-    "frontmatter": { "title": "我的新文章", "tags": ["demo"] },
-    "content": "## 开始写作\n\n这是一篇测试文章。",
-    "commitMessage": "新建：我的新文章"
-  }'
-
-
-# ── 10. 更新文章 ─────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies -X PUT \
-  "http://localhost:8000/api/posts/src/content/posts/new-post/index.md" \
-  -H "Content-Type: application/json" \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -d '{
-    "sha": "上一步返回的 sha",
-    "frontmatter": { "title": "修改后的标题" },
-    "content": "更新后的内容..."
-  }'
-
-
-# ── 11. 重命名/移动文章 ──────────────────────────────────────────
-
-curl -s -b /tmp/cookies -X PATCH \
-  "http://localhost:8000/api/posts/src/content/posts/old-name/index.md" \
-  -H "Content-Type: application/json" \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -d '{
-    "newPath": "src/content/posts/new-name/index.md",
-    "sha": "当前文件 sha"
-  }'
-
-
-# ── 12. 删除文章 ─────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies -X DELETE \
-  "http://localhost:8000/api/posts/src/content/posts/my-post/index.md" \
-  -H "Content-Type: application/json" \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -d '{"sha":"文件 sha"}'
-
-
-# ── 13. 列出配置文件 ─────────────────────────────────────────────
-
-curl -s -b /tmp/cookies http://localhost:8000/api/config-files
-
-
-# ── 14. 读取单个配置文件 ────────────────────────────────────────
-
-curl -s -b /tmp/cookies \
-  "http://localhost:8000/api/config-files/.astro-editor.yml"
-
-
-# ── 15. 上传图片 ─────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies -X POST http://localhost:8000/api/media \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF" \
-  -F "file=@/path/to/your/image.png"
-# 注意：/api/media 使用 multipart/form-data，不是 JSON
-
-
-# ── 16. 列出已上传的图片 ─────────────────────────────────────────
-
-curl -s -b /tmp/cookies "http://localhost:8000/api/media?page=1&pageSize=20"
-
-
-# ── 17. 登出 ──────────────────────────────────────────────────────
-
-curl -s -b /tmp/cookies -X POST http://localhost:8000/api/auth/logout \
-  -H "Cookie: hexo_csrf=$CSRF" \
-  -H "X-CSRF-Token: $CSRF"
-# 清除 hexo_session Cookie
-```
+## 安全说明
+
+- GitHub Token 仅在服务端使用，前端不可见；Token 经 AES-256-GCM 加密后存放在 JWT 中，密钥由 `JWT_SECRET` 派生；
+- 会话 Cookie 为 HttpOnly + SameSite=Lax，生产环境（Vercel）自动启用 Secure；
+- 所有写操作（POST / PUT / PATCH / DELETE）均需通过 CSRF 校验（Double Submit Cookie 模式）；
+- `JWT_SECRET` 是唯一的部署密钥，请妥善保管，不要提交到仓库；泄露或修改后，所有已登录会话立即失效，需要重新登录。
 
 ---
 
-## 部署到 Deno Deploy
+## 常见问题
 
-### 1. 安装 deployctl
+### 登录 / 接口报 "JWT_SECRET is not configured"
 
-```bash
-deno install -A --global jsr:@deno/deployctl
-```
+没有配置 `JWT_SECRET`。在 Vercel 项目 **Settings → Environment Variables** 中添加该变量后重新部署；本地开发时在根目录 `.env` 中配置。
 
-### 2. 设置环境变量
+### 部署后页面能打开但接口 404
 
-在 Deno Deploy 控制台添加：
+确认 `vercel.json` 存在且 `api/[[...all]].ts` 未被删除；`/api/*` 请求由该 Serverless Function 处理，其余路径回退到 `index.html`（SPA 路由）。
 
-| 变量 | 值 |
-|------|-----|
-| `JWT_SECRET` | 一个随机字符串（越长越好，用于签发 JWT） |
-| `DENO_ENV` | `production` |
+### 登录后操作报 CSRF 校验失败
 
-生成随机 JWT_SECRET：
-```bash
-deno eval "console.log(Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2,'0')).join(''))"
-```
+刷新页面重新获取 CSRF Token；确认浏览器允许 Cookie（尤其是浏览器隐私模式 / 第三方 Cookie 限制）。
 
-### 3. 构建并部署
+### GitHub API 限流（403 / rate limit）
 
-```bash
-# 构建前端
-cd client && npm run build && cd ..
+服务端对 GitHub API 结果做了内存缓存（文章列表 5 分钟、仓库树 3 分钟等），限流会在冷启动后自然恢复；频繁触发可稍等片刻再试。
 
-# 部署
-deployctl deploy --project=hexo-backend main.ts
-```
+### 大仓库或大量文件导致接口超时
 
-Deno Deploy 会自动分发到全球边缘节点。
+`vercel.json` 已将 API 函数的最大执行时长设置为 60 秒；若仍超时，可减少 `postsDir` 下的文件数量或调整缓存。
+
+### 之前的 Cloudflare Workers / Deno 部署
+
+本项目已迁移为 Vercel 部署，`wrangler.toml`、`worker/` 目录及旧部署教程均已移除。核心 API 逻辑（`server/`）与前端（`client/`）保持不变。
 
 ---
 
-## 常用命令
+## 技术栈
 
-```bash
-# 后端开发
-deno task dev               # 启动 Hono 开发服务器（--watch 热重载）
-
-# 前端开发
-deno task dev:client        # 启动 Vite dev server（http://localhost:5173）
-
-# 构建
-deno task build             # 构建前端静态资源（vue-tsc + vite build）
-
-# 部署
-deno task deploy            # 部署到 Deno Deploy
-
-# 类型检查（后端）
-deno check server/router.ts
-
-# 类型检查（前端）
-cd client && npx vue-tsc --noEmit
-```
-
----
-
-## 仓库配置文件（.astro-editor.yml）
-
-放在博客仓库根目录，用于自定义编辑器行为。完整示例：
-
-```yaml
-repo:
-  postsDir: src/content/posts/          # 文章目录
-  layout: folder                         # "folder" | "flat"
-  assets:
-    mode: co-located                     # "co-located" | "public"
-    publicDir: public/images/blog
-    naming: "{slug}-{yyyy}{mm}{dd}-{rand6}"
-  extensions: [".md", ".mdx"]
-  configFilePatterns:
-    - "*.json"
-    - "*.yml"
-    - "*.yaml"
-    - "*.toml"
-    - "astro.config.*"
-    - "*.config.*"
-    - ".env.example"
-
-workflow:
-  saveMode: direct                       # V1 仅 direct
-  commitMessageTemplate: "edit: {title}"
-
-frontmatter:
-  required: ["title"]
-  defaults:
-    draft: false
-    tags: []
-    category: ""
-  fields:
-    - key: title
-      type: string
-      label: 标题
-      required: true
-    - key: published
-      type: date
-      label: 发布日期
-    - key: tags
-      type: string[]
-      label: 标签
-    - key: category
-      type: string
-      label: 分类
-    - key: abbrlink
-      type: string
-      label: 永久链接标识
-    - key: description
-      type: string
-      label: 摘要
-    - key: cover
-      type: string
-      label: 封面图
-
-editor:
-  previewTheme: system
-  autoSaveIntervalMs: 5000
-
-permissions:
-  allowUsers: []                         # GitHub 用户名白名单，空则不限
-```
+| 层 | 技术 |
+| --- | --- |
+| 部署 | Vercel（静态托管 + Serverless Function） |
+| 后端 | Hono、jose（JWT / AES-GCM）、js-yaml |
+| 前端 | Vue 3、Vite、TailwindCSS、marked、highlight.js、KaTeX |
+| 数据源 | GitHub REST API（仓库、Contents、Trees） |

@@ -73,7 +73,7 @@ apiRouter.get('/health', (c) => {
     ok: true,
     data: {
       status: 'ok',
-      runtime: 'deno',
+      runtime: 'vercel',
       timestamp: new Date().toISOString(),
       githubRateLimit: lastRateLimit.remaining >= 0
         ? {
