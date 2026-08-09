@@ -14,8 +14,8 @@
 
 import type { MiddlewareHandler } from 'hono'
 import { getCookie, deleteCookie } from 'hono/cookie'
-import { verifyJwt, decryptToken } from '../services/jwt.ts'
-import type { Session } from '../types.ts'
+import { verifyJwt, decryptToken } from '../services/jwt.js'
+import type { Session } from '../types.js'
 
 // ── Cookie name ──────────────────────────────────────────────────
 

@@ -12,8 +12,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { webcrypto } from 'node:crypto'
-import { apiRouter } from './router.ts'
-import { initEnv } from './services/env.ts'
+import { apiRouter } from './router.js'
+import { initEnv } from './services/env.js'
 
 // Node < 19 (e.g. Node 18 runtimes) does not expose globalThis.crypto,
 // but the CSRF / JWT services rely on Web Crypto. Provide it when missing.

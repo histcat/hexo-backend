@@ -177,12 +177,13 @@ hexo-backend/
 
 ### 打开网站提示 "A server error has occurred" / "Unexpected token 'A', ... is not valid JSON"
 
-这是前端调用 `/api/*` 时收到了 Vercel 的 500 错误页（不是 JSON）。历史上有两个常见原因：
+这是前端调用 `/api/*` 时收到了 Vercel 的 500 错误页（不是 JSON）。常见原因与对应修复：
 
-1. 函数入口使用了 Next.js 风格的 named exports（`export const GET = ...`），而 Vercel 普通函数要求 default export，导致所有 API 请求返回 `FUNCTION_INVOCATION_FAILED`；
-2. 旧部署运行在缺少全局 Web Crypto 的 Node 18 运行时，导致 CSRF Token 生成崩溃。
+1. **相对导入带 `.ts` 后缀（根本原因）**：Vercel 会把 `api/`、`server/` 下的 TypeScript 逐文件编译为 `.js`，但不会改写 import 里的 `.ts` 后缀，运行时找不到模块（`ERR_MODULE_NOT_FOUND`），所有 API 请求都会返回 `FUNCTION_INVOCATION_FAILED`。本项目已把所有相对导入改为 `.js` 后缀。
+2. **函数入口**：Vercel 普通函数通过 default export 调用，入口文件应使用 `export default handle(app)`。
+3. **运行时兼容**：`package.json` 中 `engines.node >= 20`，且已包含 Web Crypto 兼容修复（Node 18 缺少全局 `crypto`）。
 
-请确认部署的是最新代码（函数入口为 `export default handle(app)`、`package.json` 中 `engines.node >= 20`，并已包含 Web Crypto 兼容修复）；如仍复现，可在 Vercel 项目的 **Functions** 日志中查看具体报错。
+如仍复现，可在 Vercel 项目的 **Functions** 日志中查看具体报错。
 
 ### 登录 / 接口报 "JWT_SECRET is not configured"
 

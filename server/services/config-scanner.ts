@@ -6,8 +6,8 @@
  */
 
 import { load } from 'js-yaml'
-import type { RepoConfig, FrontmatterField } from '../types.ts'
-import { fetchFileContent } from './github.ts'
+import type { RepoConfig, FrontmatterField } from '../types.js'
+import { fetchFileContent } from './github.js'
 
 // ── Defaults ─────────────────────────────────────────────────────
 

@@ -10,8 +10,8 @@
  */
 
 import { SignJWT, jwtVerify } from 'jose'
-import type { RepoConfig } from '../types.ts'
-import { getJwtSecret } from './env.ts'
+import type { RepoConfig } from '../types.js'
+import { getJwtSecret } from './env.js'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()

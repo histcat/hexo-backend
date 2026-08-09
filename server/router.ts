@@ -1,10 +1,10 @@
 import { Hono } from 'hono'
 import { setCookie, deleteCookie } from 'hono/cookie'
-import { requestLogger } from './middleware/logger.ts'
-import { requireAuth, AUTH_COOKIE } from './middleware/auth.ts'
-import { applyCsrfCookie, csrfGuard } from './middleware/csrf.ts'
-import { signJwt, encryptToken } from './services/jwt.ts'
-import { isProduction } from './services/env.ts'
+import { requestLogger } from './middleware/logger.js'
+import { requireAuth, AUTH_COOKIE } from './middleware/auth.js'
+import { applyCsrfCookie, csrfGuard } from './middleware/csrf.js'
+import { signJwt, encryptToken } from './services/jwt.js'
+import { isProduction } from './services/env.js'
 import {
   fetchGitHubUser,
   listUserRepos,
@@ -18,10 +18,10 @@ import {
   lastRateLimit,
   type GitHubRepo,
   type GitHubTreeEntry,
-} from './services/github.ts'
+} from './services/github.js'
 import { load } from 'js-yaml'
-import { fetchRepoConfig } from './services/config-scanner.ts'
-import { cache } from './services/cache.ts'
+import { fetchRepoConfig } from './services/config-scanner.js'
+import { cache } from './services/cache.js'
 import {
   parseFrontmatter,
   serializePost,
@@ -29,8 +29,8 @@ import {
   extractTags,
   extractCategory,
   extractPublished,
-} from './services/frontmatter.ts'
-import type { ApiResponse, UserInfo, RepoRef, RepoConfig, PostSummary, ConfigFileSummary, Session } from './types.ts'
+} from './services/frontmatter.js'
+import type { ApiResponse, UserInfo, RepoRef, RepoConfig, PostSummary, ConfigFileSummary, Session } from './types.js'
 
 /**
  * Extract the file path from a wildcard route's URL.

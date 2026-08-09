@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono'
-import { lastRateLimit } from '../services/github.ts'
+import { lastRateLimit } from '../services/github.js'
 
 /**
  * Request logger for /api/* routes.

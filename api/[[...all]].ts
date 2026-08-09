@@ -9,6 +9,6 @@
  * export. The handler receives the raw Web Request and returns a Response.
  */
 import { handle } from 'hono/vercel'
-import { app } from '../server/app.ts'
+import { app } from '../server/app.js'
 
 export default handle(app)

@@ -2,7 +2,7 @@
 
 declare module 'hono' {
   interface ContextVariableMap {
-    session: import('./types.ts').Session
+    session: import('./types.js').Session
   }
 }
 
