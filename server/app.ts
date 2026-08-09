@@ -11,15 +11,22 @@
  */
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { webcrypto } from 'node:crypto'
 import { apiRouter } from './router.ts'
 import { initEnv } from './services/env.ts'
+
+// Node < 19 (e.g. Node 18 runtimes) does not expose globalThis.crypto,
+// but the CSRF / JWT services rely on Web Crypto. Provide it when missing.
+if (!globalThis.crypto) {
+  ;(globalThis as unknown as { crypto: Crypto }).crypto = webcrypto as Crypto
+}
 
 export function createApp(): Hono {
   const app = new Hono()
 
   // Seed env vars from process.env (Vercel project settings / local .env)
   app.use('/api/*', async (_c, next) => {
-    initEnv(process.env.JWT_SECRET)
+    initEnv(typeof process !== 'undefined' ? process.env.JWT_SECRET : undefined)
     await next()
   })
 

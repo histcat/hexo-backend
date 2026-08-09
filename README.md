@@ -76,7 +76,7 @@ Vercel 会自动注入 `VERCEL_ENV` / `NODE_ENV`，无需手动配置。
 
 ## 本地开发
 
-前置要求：Node.js >= 18.17、npm。
+前置要求：Node.js >= 20、npm。
 
 ```bash
 # 1. 安装根目录依赖
@@ -174,6 +174,10 @@ hexo-backend/
 ---
 
 ## 常见问题
+
+### 打开网站提示 "A server error has occurred" / "Unexpected token 'A', ... is not valid JSON"
+
+这是前端调用 `/api/config` 时收到了 Vercel 的 500 错误页（不是 JSON）。常见原因是旧部署运行在缺少全局 Web Crypto 的 Node 18 运行时，导致 CSRF Token 生成崩溃。请确认部署的是最新代码（`package.json` 中 `engines.node >= 20`，并已包含 Web Crypto 兼容修复）；如仍复现，可在 Vercel 项目的 **Functions** 日志中查看具体报错。
 
 ### 登录 / 接口报 "JWT_SECRET is not configured"
 

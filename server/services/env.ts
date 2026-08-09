@@ -16,7 +16,9 @@ export function initEnv(secret: string | undefined): void {
 
 /** Get the JWT secret.  Throws if never initialized. */
 export function getJwtSecret(): string {
-  const secret = _jwtSecret ?? process.env.JWT_SECRET
+  const secret =
+    _jwtSecret ??
+    (typeof process !== 'undefined' ? process.env.JWT_SECRET : undefined)
   if (!secret) {
     throw new Error(
       'JWT_SECRET is not configured. Set it in Vercel -> Project Settings -> Environment Variables, or in a local .env file.',
@@ -28,5 +30,8 @@ export function getJwtSecret(): string {
 /** True on Vercel (always HTTPS) and in production Node deployments. */
 export function isProduction(): boolean {
   // Local dev has no VERCEL_ENV and runs over plain HTTP.
-  return !!process.env.VERCEL_ENV || process.env.NODE_ENV === 'production'
+  return (
+    (typeof process !== 'undefined' && process.env.VERCEL_ENV === 'production') ||
+    (typeof process !== 'undefined' && process.env.NODE_ENV === 'production')
+  )
 }

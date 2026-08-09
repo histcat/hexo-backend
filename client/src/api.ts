@@ -128,7 +128,19 @@ async function request<T>(
   }
 
   const res = await fetch(`${BASE}${path}`, opts)
-  const json: ApiEnvelope<T> = await res.json()
+  const raw = await res.text()
+  let json: ApiEnvelope<T>
+  try {
+    json = JSON.parse(raw) as ApiEnvelope<T>
+  } catch {
+    // Non-JSON response (e.g. a platform error page) - surface a readable error.
+    console.error(`API ${method} ${path} returned non-JSON (HTTP ${res.status}):`, raw.slice(0, 200))
+    throw new Error(
+      res.ok
+        ? '服务器返回了无法解析的响应，请稍后重试'
+        : `服务器错误 (HTTP ${res.status})，请稍后重试`,
+    )
+  }
 
   if (!json.ok) {
     const err = new Error(json.error?.message || 'Request failed') as Error & {
@@ -170,7 +182,18 @@ async function uploadFile<T>(
     body: formData,
   })
 
-  const json: ApiEnvelope<T> = await res.json()
+  const raw = await res.text()
+  let json: ApiEnvelope<T>
+  try {
+    json = JSON.parse(raw) as ApiEnvelope<T>
+  } catch {
+    console.error(`Upload returned non-JSON (HTTP ${res.status}):`, raw.slice(0, 200))
+    throw new Error(
+      res.ok
+        ? '服务器返回了无法解析的响应，请稍后重试'
+        : `服务器错误 (HTTP ${res.status})，请稍后重试`,
+    )
+  }
 
   if (!json.ok) {
     const err = new Error(json.error?.message || 'Upload failed') as Error & {
