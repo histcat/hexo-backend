@@ -5,10 +5,15 @@
  * code is identical between local dev and Vercel. Static files
  * (client/dist) and the SPA fallback are handled by Vercel (vercel.json).
  *
- * Plain Vercel Functions (files under api/) are invoked via their default
- * export. The handler receives the raw Web Request and returns a Response.
+ * Plain Vercel Functions use the "fetch Web Standard export": a default
+ * export object with a fetch(request) method that receives a standard
+ * Request and returns a Response. (A bare default function is treated as
+ * a Node (req, res) handler by Vercel, which would hang / time out.)
  */
-import { handle } from 'hono/vercel'
 import { app } from '../server/app.js'
 
-export default handle(app)
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return app.fetch(request)
+  },
+}
