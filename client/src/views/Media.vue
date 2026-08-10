@@ -19,7 +19,7 @@
       </div>
     </header>
 
-    <main class="mx-auto max-w-4xl px-4 py-8">
+    <main class="mx-auto max-w-4xl px-4 pb-24 pt-8">
       <!-- Upload area -->
       <div class="mb-6 rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 dark:border-gray-600 dark:bg-gray-800">
         <div class="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
@@ -157,6 +157,8 @@
         </button>
       </div>
     </main>
+
+    <MobileTabBar />
   </div>
 </template>
 
@@ -165,6 +167,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, type AssetItem, type AssetUploadResult } from '../api'
 import DarkToggle from '../components/DarkToggle.vue'
+import MobileTabBar from '../components/MobileTabBar.vue'
 
 const router = useRouter()
 

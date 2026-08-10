@@ -18,37 +18,40 @@
           >
             新建文章
           </button>
-          <button
-            @click="router.push('/media')"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            资源
-          </button>
-          <button
-            @click="router.push('/talks')"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            说说
-          </button>
-          <button
-            @click="refresh"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-            :disabled="loading"
-          >
-            刷新
-          </button>
           <DarkToggle />
-          <button
-            @click="doLogout"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            退出
-          </button>
+          <div class="hidden items-center gap-2 sm:flex">
+            <button
+              @click="router.push('/media')"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              资源
+            </button>
+            <button
+              @click="router.push('/talks')"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              说说
+            </button>
+            <button
+              @click="refresh"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+              :disabled="loading"
+            >
+              刷新
+            </button>
+            <button
+              @click="doLogout"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              退出
+            </button>
+          </div>
+          <MobileMenu :items="mobileMenuItems" />
         </div>
       </div>
     </header>
 
-    <main class="mx-auto max-w-4xl px-4 py-8">
+    <main class="mx-auto max-w-4xl px-4 pb-24 pt-8">
       <!-- Tab switcher -->
       <div class="mb-6 flex rounded-lg border border-gray-300 bg-gray-50 p-0.5 dark:border-gray-600 dark:bg-gray-800">
         <button
@@ -323,6 +326,8 @@
         </ul>
       </div>
     </main>
+
+    <MobileTabBar />
   </div>
 </template>
 
@@ -331,8 +336,17 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, type PostSummary, type UserInfo, type ConfigFileSummary } from '../api'
 import DarkToggle from '../components/DarkToggle.vue'
+import MobileMenu from '../components/MobileMenu.vue'
+import MobileTabBar from '../components/MobileTabBar.vue'
 
 const router = useRouter()
+
+const mobileMenuItems = [
+  { label: '资源', onClick: () => router.push('/media') },
+  { label: '说说', onClick: () => router.push('/talks') },
+  { label: '刷新', onClick: () => fetchPosts() },
+  { label: '退出', onClick: () => doLogout() },
+]
 
 // ── State ──────────────────────────────────────────────────────
 

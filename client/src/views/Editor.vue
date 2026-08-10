@@ -216,7 +216,7 @@
         ]"
       >
         <!-- Frontmatter YAML editor (collapsible) -->
-        <details class="border-b border-gray-200 dark:border-gray-700" open>
+        <details class="border-b border-gray-200 dark:border-gray-700">
           <summary class="flex cursor-pointer items-center gap-2 px-4 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800">
             Frontmatter (YAML)
             <span v-if="yamlError" class="text-red-500">— {{ yamlError }}</span>

@@ -8,30 +8,33 @@
           <p v-if="user" class="text-sm text-gray-500 dark:text-gray-400">{{ user.login }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button
-            @click="router.push('/posts')"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            文章
-          </button>
-          <button
-            @click="router.push('/media')"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            资源
-          </button>
           <DarkToggle />
-          <button
-            @click="doLogout"
-            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            退出
-          </button>
+          <div class="hidden items-center gap-2 sm:flex">
+            <button
+              @click="router.push('/posts')"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              文章
+            </button>
+            <button
+              @click="router.push('/media')"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              资源
+            </button>
+            <button
+              @click="doLogout"
+              class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              退出
+            </button>
+          </div>
+          <MobileMenu :items="mobileMenuItems" />
         </div>
       </div>
     </header>
 
-    <main class="mx-auto max-w-4xl px-4 py-8">
+    <main class="mx-auto max-w-4xl px-4 pb-24 pt-8">
       <!-- 连接 Worker -->
       <section
         class="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -314,6 +317,8 @@
         {{ toast.message }}
       </div>
     </transition>
+
+    <MobileTabBar />
   </div>
 </template>
 
@@ -322,6 +327,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, type UserInfo } from '../api'
 import DarkToggle from '../components/DarkToggle.vue'
+import MobileMenu from '../components/MobileMenu.vue'
+import MobileTabBar from '../components/MobileTabBar.vue'
 import {
   useShuoshuo,
   renderMarkdown,
@@ -332,6 +339,12 @@ import {
 
 const router = useRouter()
 const worker = useShuoshuo()
+
+const mobileMenuItems = [
+  { label: '文章', onClick: () => router.push('/posts') },
+  { label: '资源', onClick: () => router.push('/media') },
+  { label: '退出', onClick: () => doLogout() },
+]
 
 // ── State ──────────────────────────────────────────────────────
 
