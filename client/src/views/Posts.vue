@@ -99,54 +99,6 @@
           />
         </div>
 
-        <!-- Tag filters -->
-        <div v-if="allTags.length > 0" class="flex flex-wrap gap-2">
-          <button
-            v-for="tag in allTags"
-            :key="tag"
-            @click="toggleTag(tag)"
-            :class="[
-              'rounded-full px-3 py-1 text-xs font-medium transition',
-              selectedTag === tag
-                ? 'bg-blue-600 text-white dark:bg-blue-500'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600',
-            ]"
-          >
-            {{ tag }}
-          </button>
-        </div>
-
-        <!-- Category filters -->
-        <div v-if="allCategories.length > 0" class="flex flex-wrap gap-2">
-          <span class="mr-1 self-center text-xs font-medium text-gray-400 dark:text-gray-500">
-            分类:
-          </span>
-          <button
-            @click="selectedCategory = ''"
-            :class="[
-              'rounded-full px-3 py-1 text-xs font-medium transition',
-              !selectedCategory
-                ? 'bg-green-600 text-white dark:bg-green-500'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600',
-            ]"
-          >
-            全部
-          </button>
-          <button
-            v-for="cat in allCategories"
-            :key="cat"
-            @click="selectedCategory = cat"
-            :class="[
-              'rounded-full px-3 py-1 text-xs font-medium transition',
-              selectedCategory === cat
-                ? 'bg-green-600 text-white dark:bg-green-500'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600',
-            ]"
-          >
-            {{ cat }}
-          </button>
-        </div>
-
         <!-- Draft status filter -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="mr-1 self-center text-xs font-medium text-gray-400 dark:text-gray-500">
@@ -390,8 +342,6 @@ const posts = ref<PostSummary[]>([])
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
-const selectedTag = ref('')
-const selectedCategory = ref('')
 const selectedDraft = ref<'all' | 'draft' | 'published'>('all')
 const page = ref(1)
 const pageSize = 20
@@ -407,25 +357,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Computed ───────────────────────────────────────────────────
 
-const hasFilter = computed(
-  () => !!(search.value || selectedTag.value || selectedCategory.value),
-)
-
-const allTags = computed(() => {
-  const tags = new Set<string>()
-  for (const p of posts.value) {
-    for (const t of p.frontmatter.tags || []) tags.add(t)
-  }
-  return [...tags].sort()
-})
-
-const allCategories = computed(() => {
-  const cats = new Set<string>()
-  for (const p of posts.value) {
-    if (p.frontmatter.category) cats.add(p.frontmatter.category)
-  }
-  return [...cats].sort()
-})
+const hasFilter = computed(() => !!search.value)
 
 // ── Methods ────────────────────────────────────────────────────
 
@@ -443,8 +375,6 @@ async function fetchPosts() {
 
     const data = await api.listPosts({
       q: search.value || undefined,
-      tag: selectedTag.value || undefined,
-      category: selectedCategory.value || undefined,
       draft:
         selectedDraft.value === 'all'
           ? undefined
@@ -480,16 +410,8 @@ function onSearchInput() {
   }, 300)
 }
 
-function toggleTag(tag: string) {
-  selectedTag.value = selectedTag.value === tag ? '' : tag
-  page.value = 1
-  fetchPosts()
-}
-
 function clearFilters() {
   search.value = ''
-  selectedTag.value = ''
-  selectedCategory.value = ''
   selectedDraft.value = 'all'
   page.value = 1
   fetchPosts()
@@ -564,11 +486,6 @@ function formatDate(iso: string): string {
     return iso
   }
 }
-
-watch(selectedCategory, () => {
-  page.value = 1
-  fetchPosts()
-})
 
 watch(activeTab, (tab) => {
   if (tab === 'config' && configFiles.value.length === 0 && !configLoading.value) {
