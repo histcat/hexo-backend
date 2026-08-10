@@ -180,7 +180,7 @@
     </div>
 
     <!-- Editor body -->
-    <div v-else class="flex min-h-0 flex-1 flex-col md:flex-row">
+    <div v-else class="flex min-h-0 flex-1 flex-col overflow-x-hidden md:flex-row">
       <!-- Mobile tabs -->
       <div class="flex border-b border-gray-200 md:hidden dark:border-gray-700">
         <button
@@ -210,7 +210,7 @@
       <!-- Left: Forms + Editor -->
       <div
         :class="[
-          'flex min-h-0 flex-1 flex-col border-r border-gray-200 dark:border-gray-700',
+          'flex min-h-0 min-w-0 flex-1 flex-col border-r border-gray-200 dark:border-gray-700',
           mobileTab === 'edit' ? 'flex' : 'hidden',
           'md:flex',
         ]"
@@ -240,7 +240,7 @@
         </details>
 
         <!-- Markdown editor -->
-        <div class="flex min-h-0 flex-1 flex-col">
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col">
           <div
             :class="[
               'flex min-h-0 flex-1',
@@ -262,7 +262,7 @@
       <!-- Right: Preview (desktop always visible, mobile via tab) -->
       <div
         :class="[
-          'min-h-0 flex-1 flex-col bg-gray-50 dark:bg-gray-800',
+          'min-h-0 min-w-0 flex-1 flex-col bg-gray-50 dark:bg-gray-800',
           mobileTab === 'preview' ? 'flex' : 'hidden',
           'md:flex',
         ]"

@@ -2,7 +2,7 @@
   <div class="flex min-h-0 flex-1 flex-col">
     <!-- Toolbar -->
     <div
-      class="flex items-center gap-0.5 overflow-x-auto border-b border-gray-200 bg-gray-50 px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-gray-700 dark:bg-gray-800"
+      class="flex max-w-full items-center gap-0.5 overflow-x-auto border-b border-gray-200 bg-gray-50 px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-gray-700 dark:bg-gray-800"
     >
       <button
         v-for="btn in toolbar"
