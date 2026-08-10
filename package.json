@@ -14,9 +14,9 @@
     "deploy": "npm run build && vercel --prod"
   },
   "dependencies": {
-    "hono": "^4.7.0",
+    "hono": "^4.13.1",
     "jose": "^5.10.0",
-    "js-yaml": "^4.1.1"
+    "js-yaml": "^5.2.3"
   },
   "devDependencies": {
     "@hono/node-server": "^1.13.7",

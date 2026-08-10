@@ -12,6 +12,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.min.css'
 import katex from 'katex'
@@ -162,7 +163,8 @@ const renderedHtml = computed(() => {
     // Step 2: parse remaining markdown with marked
     const html = marked.parse(withMath) as string
 
-    return html
+    // Step 3: sanitize before injecting into the DOM (stored-XSS guard)
+    return DOMPurify.sanitize(html)
   } catch {
     return '<p class="text-red-500">Markdown 解析错误</p>'
   }

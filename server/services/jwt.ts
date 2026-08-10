@@ -135,7 +135,7 @@ export interface JwtPayload {
   repoConfig?: RepoConfig
 }
 
-const JWT_EXPIRY_SECONDS = 24 * 60 * 60 // 24 hours
+const JWT_EXPIRY_SECONDS = 30 * 24 * 60 * 60 // 30 days
 
 /**
  * Sign a JWT with the session payload.

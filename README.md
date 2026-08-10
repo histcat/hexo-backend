@@ -72,6 +72,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Vercel 会自动注入 `VERCEL_ENV` / `NODE_ENV`，无需手动配置。
 
+> 会话有效期默认 30 天，且已选择的仓库会保存在会话中：登录后再次打开后台会自动跳过「选择仓库」，直接进入文章列表。
+
 可选的前端构建变量（放在 `client/.env`）：
 
 | 变量 | 说明 |
@@ -183,6 +185,10 @@ hexo-backend/
 - GitHub Token 仅在服务端使用，前端不可见；Token 经 AES-256-GCM 加密后存放在 JWT 中，密钥由 `JWT_SECRET` 派生；
 - 会话 Cookie 为 HttpOnly + SameSite=Lax，生产环境（Vercel）自动启用 Secure；
 - 所有写操作（POST / PUT / PATCH / DELETE）均需通过 CSRF 校验（Double Submit Cookie 模式）；
+- Markdown 渲染（文章预览、说说）输出前经过 DOMPurify 消毒，防存储型 XSS；
+- 部署启用了 CSP、`X-Content-Type-Options: nosniff` 等安全响应头（见 `vercel.json`）；
+- 文件接口统一校验路径：文章接口限定在文章目录内且扩展名为 `.md/.mdx`，配置接口允许任意路径但拒绝 `..` 穿越；
+- 图片上传校验文件头（magic bytes）与声明类型一致，并已移除可携带脚本的 SVG 格式；
 - `JWT_SECRET` 是唯一的部署密钥，请妥善保管，不要提交到仓库；泄露或修改后，所有已登录会话立即失效，需要重新登录。
 
 ---

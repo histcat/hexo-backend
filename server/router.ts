@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { setCookie, deleteCookie } from 'hono/cookie'
 import { requestLogger } from './middleware/logger.js'
 import { requireAuth, AUTH_COOKIE } from './middleware/auth.js'
@@ -43,7 +44,25 @@ import type { ApiResponse, UserInfo, RepoRef, RepoConfig, PostSummary, ConfigFil
  * @param routePrefix - e.g. '/posts/' or '/config-files/'
  */
 function getWildcardPath(c: import('hono').Context, routePrefix: string): string {
-  return decodeURIComponent(c.req.path.slice(routePrefix.length))
+  try {
+    return decodeURIComponent(c.req.path.slice(routePrefix.length))
+  } catch {
+    // 畸形百分号编码（如 %zz）→ 视为无效路径
+    return ''
+  }
+}
+
+/** 仓库内相对路径合法性：拒绝空值、`..` 与绝对路径。 */
+function isValidRepoPath(filePath: string): boolean {
+  if (!filePath || filePath.includes('..') || filePath.startsWith('/')) return false
+  return true
+}
+
+/** 校验文章路径：必须在 postsDir 内且扩展名在配置范围内。 */
+function isPostPath(filePath: string, postsDir: string, extensions: string[]): boolean {
+  if (!isValidRepoPath(filePath)) return false
+  if (!filePath.startsWith(postsDir)) return false
+  return extensions.some((ext) => filePath.toLowerCase().endsWith(ext.toLowerCase()))
 }
 
 /** Map a GitHubError to a typed HTTP status code */
@@ -58,6 +77,9 @@ function errorStatus(e: GitHubError): 400 | 401 | 403 | 404 | 409 | 422 | 500 | 
 }
 
 export const apiRouter = new Hono()
+
+/** 会话有效期：30 天 */
+const SESSION_MAX_AGE = 30 * 24 * 60 * 60
 
 // ── Global middleware ───────────────────────────────────────────
 
@@ -111,6 +133,58 @@ apiRouter.get('/config', (c) => {
 // ── Auth endpoints ──────────────────────────────────────────────
 
 /**
+ * Validate a GitHub token, sign a JWT session, and set the auth cookie.
+ * Shared by all login flows.
+ */
+async function issueSession(c: Context, rawToken: string) {
+  let user: { id: number; login: string; name: string; avatar_url: string }
+  try {
+    user = await fetchGitHubUser(rawToken)
+  } catch (e) {
+    if (e instanceof GitHubError) {
+      return c.json({
+        ok: false,
+        error: { code: e.code, message: e.message },
+      } satisfies ApiResponse, e.status === 401 || e.status === 403 ? 401 : 502)
+    }
+    console.error('Unexpected error during login:', e)
+    return c.json({
+      ok: false,
+      error: { code: 'GITHUB_ERROR', message: '验证 GitHub Token 时发生错误' },
+    } satisfies ApiResponse, 502)
+  }
+
+  const encryptedToken = await encryptToken(rawToken)
+  const jwt = await signJwt({
+    sub: user.id,
+    login: user.login,
+    name: user.name || user.login,
+    avatarUrl: user.avatar_url,
+    encryptedToken,
+  })
+
+  setCookie(c, AUTH_COOKIE, jwt, {
+    path: '/',
+    httpOnly: true,
+    secure: isProduction(),
+    sameSite: 'Lax',
+    maxAge: SESSION_MAX_AGE,
+  })
+
+  const userInfo: UserInfo = {
+    id: user.id,
+    login: user.login,
+    name: user.name || user.login,
+    avatarUrl: user.avatar_url,
+  }
+
+  return c.json({
+    ok: true,
+    data: { user: userInfo },
+  } satisfies ApiResponse<{ user: UserInfo }>)
+}
+
+/**
  * POST /api/auth/login
  * Body: { token: string } — GitHub Personal Access Token
  */
@@ -133,56 +207,7 @@ apiRouter.post('/auth/login', async (c) => {
     } satisfies ApiResponse, 400)
   }
 
-  // Validate the token by calling GitHub API
-  let user: { id: number; login: string; name: string; avatar_url: string }
-  try {
-    user = await fetchGitHubUser(rawToken)
-  } catch (e) {
-    if (e instanceof GitHubError) {
-      return c.json({
-        ok: false,
-        error: { code: e.code, message: e.message },
-      } satisfies ApiResponse, e.status === 401 || e.status === 403 ? 401 : 502)
-    }
-    console.error('Unexpected error during login:', e)
-    return c.json({
-      ok: false,
-      error: { code: 'GITHUB_ERROR', message: '验证 GitHub Token 时发生错误' },
-    } satisfies ApiResponse, 502)
-  }
-
-  // Encrypt the token and sign a JWT
-  const encryptedToken = await encryptToken(rawToken)
-  const jwt = await signJwt({
-    sub: user.id,
-    login: user.login,
-    name: user.name || user.login,
-    avatarUrl: user.avatar_url,
-    encryptedToken,
-  })
-
-  const isProd = isProduction()
-
-  // Set HttpOnly Secure cookie
-  setCookie(c, AUTH_COOKIE, jwt, {
-    path: '/',
-    httpOnly: true,
-    secure: isProd,
-    sameSite: 'Lax',
-    maxAge: 24 * 60 * 60, // 24 hours
-  })
-
-  const userInfo: UserInfo = {
-    id: user.id,
-    login: user.login,
-    name: user.name || user.login,
-    avatarUrl: user.avatar_url,
-  }
-
-  return c.json({
-    ok: true,
-    data: { user: userInfo },
-  } satisfies ApiResponse<{ user: UserInfo }>)
+  return issueSession(c, rawToken)
 })
 
 /**
@@ -335,7 +360,7 @@ apiRouter.post('/repo/select', requireAuth, async (c) => {
     httpOnly: true,
     secure: isProd,
     sameSite: 'Lax',
-    maxAge: 24 * 60 * 60,
+    maxAge: SESSION_MAX_AGE,
   })
 
   return c.json({
@@ -550,6 +575,16 @@ apiRouter.get('/posts/*', requireAuth, async (c) => {
     return c.json({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: '请提供文件路径' },
+    } satisfies ApiResponse, 400)
+  }
+
+  if (
+    !session.repoConfig ||
+    !isPostPath(filePath, session.repoConfig.postsDir, session.repoConfig.extensions)
+  ) {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '文章路径不合法（须在文章目录内且为 .md/.mdx）' },
     } satisfies ApiResponse, 400)
   }
 
@@ -777,6 +812,15 @@ apiRouter.put('/posts/*', requireAuth, async (c) => {
     } satisfies ApiResponse, 400)
   }
 
+  if (
+    !isPostPath(filePath, session.repoConfig.postsDir, session.repoConfig.extensions)
+  ) {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '文章路径不合法（须在文章目录内且为 .md/.mdx）' },
+    } satisfies ApiResponse, 400)
+  }
+
   let body: {
     sha?: string
     frontmatter?: Record<string, unknown>
@@ -943,8 +987,11 @@ apiRouter.patch('/posts/*', requireAuth, async (c) => {
     } satisfies ApiResponse, 400)
   }
 
-  // Validate paths
-  if (oldPath.includes('..') || newPath.includes('..')) {
+  // Validate paths: 必须在文章目录内、扩展名合法，且拒绝 `..`
+  if (
+    !isPostPath(oldPath, session.repoConfig.postsDir, session.repoConfig.extensions) ||
+    !isPostPath(newPath, session.repoConfig.postsDir, session.repoConfig.extensions)
+  ) {
     return c.json({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: '路径非法' },
@@ -1065,6 +1112,15 @@ apiRouter.delete('/posts/*', requireAuth, async (c) => {
     return c.json({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: '请提供文件路径' },
+    } satisfies ApiResponse, 400)
+  }
+
+  if (
+    !isPostPath(filePath, session.repoConfig.postsDir, session.repoConfig.extensions)
+  ) {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '文章路径不合法（须在文章目录内且为 .md/.mdx）' },
     } satisfies ApiResponse, 400)
   }
 
@@ -1204,6 +1260,13 @@ apiRouter.get('/config-files/*', requireAuth, async (c) => {
     } satisfies ApiResponse, 400)
   }
 
+  if (!isValidRepoPath(filePath)) {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '配置文件路径不合法' },
+    } satisfies ApiResponse, 400)
+  }
+
   const { owner, name } = session.selectedRepo
   const token = session.githubToken
 
@@ -1267,6 +1330,13 @@ apiRouter.put('/config-files/*', requireAuth, async (c) => {
     return c.json({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: '请提供文件路径' },
+    } satisfies ApiResponse, 400)
+  }
+
+  if (!isValidRepoPath(filePath)) {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '配置文件路径不合法' },
     } satisfies ApiResponse, 400)
   }
 
@@ -1366,15 +1436,37 @@ const ALLOWED_IMAGE_TYPES = new Set([
   'image/png',
   'image/jpeg',
   'image/gif',
-  'image/svg+xml',
   'image/webp',
   'image/bmp',
 ])
 
 /** Extensions recognized as images for listing */
 const IMAGE_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico',
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico',
 ])
+
+/** 通过文件头（magic bytes）识别真实图片类型，防止伪造 MIME 上传非图片内容。 */
+function sniffImageType(bytes: Uint8Array): string | null {
+  const head = (off: number, len: number): string =>
+    String.fromCharCode(...bytes.slice(off, off + len))
+
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return 'image/png'
+  }
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg'
+  }
+  if (bytes.length >= 6 && (head(0, 6) === 'GIF87a' || head(0, 6) === 'GIF89a')) {
+    return 'image/gif'
+  }
+  if (bytes.length >= 12 && head(0, 4) === 'RIFF' && head(8, 4) === 'WEBP') {
+    return 'image/webp'
+  }
+  if (bytes.length >= 2 && bytes[0] === 0x42 && bytes[1] === 0x4d) {
+    return 'image/bmp'
+  }
+  return null
+}
 
 /** Max upload size: 10 MB */
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024
@@ -1490,7 +1582,7 @@ apiRouter.post('/media', requireAuth, async (c) => {
   const filePath = `${destDir}/${fileName}`.replace(/\/+/g, '/')
 
   // Validate path doesn't escape repo
-  if (filePath.includes('..')) {
+  if (!isValidRepoPath(filePath)) {
     return c.json({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: '路径非法' },
@@ -1505,6 +1597,15 @@ apiRouter.post('/media', requireAuth, async (c) => {
     return c.json({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: '无法读取文件内容' },
+    } satisfies ApiResponse, 400)
+  }
+
+  // 校验真实文件类型（magic bytes），与声明类型必须一致
+  const realType = sniffImageType(bytes)
+  if (!realType || realType !== file.type) {
+    return c.json({
+      ok: false,
+      error: { code: 'UNSUPPORTED_FILE_TYPE', message: '文件内容与声明类型不符' },
     } satisfies ApiResponse, 400)
   }
 

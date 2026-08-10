@@ -192,5 +192,17 @@ async function doLogout() {
   router.replace('/login')
 }
 
-onMounted(fetchRepos)
+onMounted(async () => {
+  // 会话里已选过仓库时直接进入文章列表，省去每次选择
+  try {
+    const cur = await api.repoCurrent()
+    if (cur.repo?.owner && cur.repo?.name) {
+      router.replace('/posts')
+      return
+    }
+  } catch {
+    // 尚未选择仓库 → 展示仓库列表
+  }
+  await fetchRepos()
+})
 </script>
