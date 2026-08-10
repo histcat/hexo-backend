@@ -72,6 +72,12 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Vercel 会自动注入 `VERCEL_ENV` / `NODE_ENV`，无需手动配置。
 
+可选的前端构建变量（放在 `client/.env`）：
+
+| 变量 | 说明 |
+| --- | --- |
+| `VITE_SHUOSHUO_URL` | 说说 Worker 地址，默认已写死为 `https://talktalkend.histcat.top`；配置后会覆盖默认值，也仍可在页面里手动修改并保存在浏览器中 |
+
 ---
 
 ## 本地开发
@@ -116,7 +122,7 @@ hexo-backend/
 │   └── types.ts             # 共享类型定义
 ├── client/                  # 前端 SPA（Vite + Vue 3 + TailwindCSS）
 │   └── src/
-│       ├── views/           # Login、Repos、Posts、Editor、ConfigEditor、Media
+│       ├── views/           # Login、Repos、Posts、Editor、ConfigEditor、Media、Talks（说说）
 │       ├── components/      # 可复用组件（Markdown 编辑器、代码编辑器、表单等）
 │       ├── composables/     # useDraftStore（IndexedDB 草稿）
 │       ├── router.ts        # Vue Router 路由
@@ -161,6 +167,14 @@ hexo-backend/
 
 1. 在「媒体」页浏览仓库中的图片（按配置的 `assetsPublicDir` 或 `postsDir` 扫描）；
 2. 支持图片上传（PNG / JPG / GIF / SVG / WebP / BMP，单文件不超过 10 MB），上传后自动返回 URL 可插入文章。
+
+### 6. 说说管理
+
+1. 「说说」页连接独立的说说服务（Cloudflare Worker，数据存 D1，包含公开访客回复），需要先填入 Worker 地址并测试连接；
+2. 使用 Worker 的管理员密码登录（token 保存在 sessionStorage，24 小时有效），即可发布 / 删除说说、以博主身份回复、删除回复；
+3. 说说与回复均支持 Markdown（渲染前经过 DOMPurify 消毒），列表分页展示。
+
+> 说说数据不存放在博客仓库，而是由你的 talk-talk（Cloudflare Workers + D1）服务独立存储；公共页面通过其公开 API 展示。
 
 ---
 
