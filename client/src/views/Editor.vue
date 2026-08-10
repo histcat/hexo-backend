@@ -4,7 +4,7 @@
     <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
       <button
         @click="goBack"
-        class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+        class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
         title="返回"
       >
         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@
       <button
         @click="doSave"
         :disabled="saving"
-        class="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 dark:bg-blue-500 dark:hover:bg-blue-600"
+        class="rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 sm:px-4 sm:py-1.5 dark:bg-blue-500 dark:hover:bg-blue-600"
       >
         保存
       </button>
@@ -64,7 +64,7 @@
         v-if="isDraft"
         @click="publish"
         :disabled="saving"
-        class="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-40 dark:bg-green-500 dark:hover:bg-green-600"
+        class="rounded-lg bg-green-600 px-2.5 py-1 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-40 sm:px-3 sm:py-1.5 dark:bg-green-500 dark:hover:bg-green-600"
       >
         发布
       </button>
@@ -72,7 +72,7 @@
         v-else
         @click="saveAsDraft"
         :disabled="saving"
-        class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-yellow-500 hover:text-yellow-600 disabled:opacity-40 dark:border-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
+        class="rounded-lg border border-gray-300 px-2.5 py-1 text-sm text-gray-600 hover:border-yellow-500 hover:text-yellow-600 disabled:opacity-40 sm:px-3 sm:py-1.5 dark:border-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
       >
         存草稿
       </button>
@@ -81,7 +81,7 @@
       <div v-if="!isNew" class="relative">
         <button
           @click="menuOpen = !menuOpen"
-          class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
           title="更多操作"
         >
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +184,11 @@
       <!-- Left: Forms + Editor -->
       <div class="flex min-h-0 flex-1 flex-col border-r border-gray-200 dark:border-gray-700">
         <!-- Frontmatter YAML editor (collapsible) -->
-        <details class="border-b border-gray-200 dark:border-gray-700" open>
+        <details
+          class="border-b border-gray-200 dark:border-gray-700"
+          :class="mobileTab === 'preview' ? 'hidden md:block' : ''"
+          open
+        >
           <summary class="flex cursor-pointer items-center gap-2 px-4 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800">
             Frontmatter (YAML)
             <span v-if="yamlError" class="text-red-500">— {{ yamlError }}</span>

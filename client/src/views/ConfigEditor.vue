@@ -4,7 +4,7 @@
     <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
       <button
         @click="goBack"
-        class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+        class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
         title="返回"
       >
         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +67,7 @@
       <button
         @click="doSave"
         :disabled="saving"
-        class="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 dark:bg-blue-500 dark:hover:bg-blue-600"
+        class="rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 sm:px-4 sm:py-1.5 dark:bg-blue-500 dark:hover:bg-blue-600"
       >
         保存
       </button>

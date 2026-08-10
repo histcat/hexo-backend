@@ -14,25 +14,25 @@
         <div class="flex flex-wrap items-center gap-2">
           <button
             @click="newPost"
-            class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+            class="rounded-lg bg-blue-600 px-2.5 py-1 text-sm font-medium text-white hover:bg-blue-700 sm:px-3 sm:py-1.5 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
             新建文章
           </button>
           <button
             @click="router.push('/media')"
-            class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             资源
           </button>
           <button
             @click="router.push('/talks')"
-            class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             说说
           </button>
           <button
             @click="refresh"
-            class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
             :disabled="loading"
           >
             刷新
@@ -40,7 +40,7 @@
           <DarkToggle />
           <button
             @click="doLogout"
-            class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             退出
           </button>

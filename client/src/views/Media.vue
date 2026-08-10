@@ -11,7 +11,7 @@
           <DarkToggle />
           <button
             @click="router.push('/posts')"
-            class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            class="rounded-lg px-2.5 py-1 text-sm text-gray-600 hover:bg-gray-100 sm:px-3 sm:py-1.5 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             返回
           </button>

@@ -39,7 +39,9 @@ export function parseFrontmatter(raw: string): ParsedPost {
   }
 
   const yamlStr = match[1]
-  const content = raw.slice(match[0].length)
+  // 去掉 `---` 结束符后的分隔空行（标准写法是 ---\n\n正文），
+  // 否则编辑器里正文前总会多一个空行。
+  const content = raw.slice(match[0].length).replace(/^\r?\n/, '')
   let frontmatter: Record<string, unknown> = {}
 
   try {
