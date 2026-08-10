@@ -1299,11 +1299,16 @@ apiRouter.get('/config-files', requireAuth, async (c) => {
   }
 
   // 2. Filter: blobs matching configFilePatterns
+  //    含 "/" 的 pattern 匹配完整路径（如 src/config.ts），否则匹配文件名
   const configEntries = tree.filter((entry) => {
     if (entry.type !== 'blob') return false
     if (!entry.path) return false
     const name = entry.path.split('/').pop() || ''
-    return configFilePatterns.some((pattern) => matchGlob(name, pattern))
+    return configFilePatterns.some((pattern) =>
+      pattern.includes('/')
+        ? matchGlob(entry.path || '', pattern)
+        : matchGlob(name, pattern),
+    )
   })
 
   // 3. Build summaries
@@ -1920,8 +1925,8 @@ function slugFromPath(filePath: string): string {
 
 /**
  * Simple glob match for config file patterns.
- * Patterns are matched against filenames (not full paths).
- * Supports * as wildcard (e.g. "*.json", "astro.config.*").
+ * Patterns are matched against filenames or full paths.
+ * Supports * as wildcard (e.g. "*.json", "src/data/*.ts").
  */
 function matchGlob(filename: string, pattern: string): boolean {
   // Escape regex special chars except *
