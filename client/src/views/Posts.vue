@@ -146,6 +146,46 @@
             {{ cat }}
           </button>
         </div>
+
+        <!-- Draft status filter -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="mr-1 self-center text-xs font-medium text-gray-400 dark:text-gray-500">
+            状态:
+          </span>
+          <button
+            @click="setDraftFilter('all')"
+            :class="[
+              'rounded-full px-3 py-1 text-xs font-medium transition',
+              selectedDraft === 'all'
+                ? 'bg-gray-700 text-white dark:bg-gray-300 dark:text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600',
+            ]"
+          >
+            全部
+          </button>
+          <button
+            @click="setDraftFilter('draft')"
+            :class="[
+              'rounded-full px-3 py-1 text-xs font-medium transition',
+              selectedDraft === 'draft'
+                ? 'bg-yellow-500 text-white dark:bg-yellow-400 dark:text-gray-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600',
+            ]"
+          >
+            草稿
+          </button>
+          <button
+            @click="setDraftFilter('published')"
+            :class="[
+              'rounded-full px-3 py-1 text-xs font-medium transition',
+              selectedDraft === 'published'
+                ? 'bg-green-600 text-white dark:bg-green-500'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600',
+            ]"
+          >
+            已发布
+          </button>
+        </div>
       </div>
 
       <!-- Loading -->
@@ -352,6 +392,7 @@ const error = ref('')
 const search = ref('')
 const selectedTag = ref('')
 const selectedCategory = ref('')
+const selectedDraft = ref<'all' | 'draft' | 'published'>('all')
 const page = ref(1)
 const pageSize = 20
 const total = ref(0)
@@ -404,6 +445,12 @@ async function fetchPosts() {
       q: search.value || undefined,
       tag: selectedTag.value || undefined,
       category: selectedCategory.value || undefined,
+      draft:
+        selectedDraft.value === 'all'
+          ? undefined
+          : selectedDraft.value === 'draft'
+            ? '1'
+            : '0',
       page: page.value,
       pageSize,
     })
@@ -443,6 +490,13 @@ function clearFilters() {
   search.value = ''
   selectedTag.value = ''
   selectedCategory.value = ''
+  selectedDraft.value = 'all'
+  page.value = 1
+  fetchPosts()
+}
+
+function setDraftFilter(value: 'all' | 'draft' | 'published') {
+  selectedDraft.value = value
   page.value = 1
   fetchPosts()
 }

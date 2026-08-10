@@ -53,6 +53,30 @@
         保存
       </button>
 
+      <!-- 草稿状态与发布 / 存草稿 -->
+      <span
+        v-if="isDraft"
+        class="rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-medium text-white dark:bg-yellow-400 dark:text-gray-900"
+      >
+        草稿
+      </span>
+      <button
+        v-if="isDraft"
+        @click="publish"
+        :disabled="saving"
+        class="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-40 dark:bg-green-500 dark:hover:bg-green-600"
+      >
+        发布
+      </button>
+      <button
+        v-else
+        @click="saveAsDraft"
+        :disabled="saving"
+        class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-yellow-500 hover:text-yellow-600 disabled:opacity-40 dark:border-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
+      >
+        存草稿
+      </button>
+
       <!-- More menu -->
       <div v-if="!isNew" class="relative">
         <button
@@ -320,6 +344,9 @@ const isDirty = computed(() => {
   )
 })
 
+/** 当前是否为草稿（frontmatter.draft === true） */
+const isDraft = computed(() => post.frontmatter.draft === true)
+
 // ── Lifecycle ──────────────────────────────────────────────────
 
 onMounted(async () => {
@@ -484,6 +511,31 @@ function onFmInput(e: Event) {
 
 function setContent(content: string) {
   post.content = content
+}
+
+// ── Draft ──────────────────────────────────────────────────────
+
+/** 设置 draft 标志并同步到 frontmatter 原始 YAML（保留其他内容格式）。 */
+function setDraftFlag(draft: boolean) {
+  post.frontmatter.draft = draft
+  const line = `draft: ${draft}`
+  frontmatterRaw.value = /^draft:/m.test(frontmatterRaw.value)
+    ? frontmatterRaw.value.replace(/^draft:.*$/m, line)
+    : frontmatterRaw.value.trim()
+      ? `${line}\n${frontmatterRaw.value}`
+      : line
+}
+
+/** 保存为草稿（draft: true，博客构建不会发布） */
+async function saveAsDraft() {
+  setDraftFlag(true)
+  await doSave()
+}
+
+/** 发布（清除 draft 标志并保存） */
+async function publish() {
+  setDraftFlag(false)
+  await doSave()
 }
 
 // ── Save ───────────────────────────────────────────────────────

@@ -521,6 +521,7 @@ apiRouter.get('/posts', requireAuth, async (c) => {
   const q = c.req.query('q')?.toLowerCase() || ''
   const tagFilter = c.req.query('tag') || ''
   const categoryFilter = c.req.query('category') || ''
+  const draftFilter = c.req.query('draft') // '1' = 仅草稿, '0' = 仅已发布
   const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1)
   const pageSize = Math.min(50, Math.max(1, parseInt(c.req.query('pageSize') || '20', 10) || 20))
 
@@ -621,6 +622,12 @@ apiRouter.get('/posts', requireAuth, async (c) => {
     filtered = filtered.filter((s) =>
       s.frontmatter.category?.toLowerCase() === categoryFilter.toLowerCase()
     )
+  }
+
+  if (draftFilter === '1') {
+    filtered = filtered.filter((s) => s.frontmatter.draft === true)
+  } else if (draftFilter === '0') {
+    filtered = filtered.filter((s) => s.frontmatter.draft !== true)
   }
 
   // Sort by published date descending (newest first)

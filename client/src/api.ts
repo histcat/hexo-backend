@@ -291,6 +291,7 @@ export const api = {
     q?: string
     tag?: string
     category?: string
+    draft?: '1' | '0'
     page?: number
     pageSize?: number
   }) {
@@ -298,6 +299,7 @@ export const api = {
     if (params?.q) qs.set('q', params.q)
     if (params?.tag) qs.set('tag', params.tag)
     if (params?.category) qs.set('category', params.category)
+    if (params?.draft) qs.set('draft', params.draft)
     if (params?.page) qs.set('page', String(params.page))
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize))
     const query = qs.toString()
