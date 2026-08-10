@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="renderedHtml"
-    class="prose prose-sm dark:prose-invert max-w-none overflow-y-auto p-4 prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-1 prose-img:rounded-lg prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:bg-slate-800 dark:prose-pre:text-gray-200 dark:prose-pre:border-slate-700"
+    class="prose prose-sm dark:prose-invert max-w-none overflow-x-auto overflow-y-auto p-4 prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700 prose-headings:pb-1 prose-img:rounded-lg prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:bg-slate-800 dark:prose-pre:text-gray-200 dark:prose-pre:border-slate-700"
     v-html="renderedHtml"
   />
   <div v-else class="flex items-center justify-center p-8 text-sm text-gray-400">

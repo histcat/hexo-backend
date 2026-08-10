@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen flex-col bg-white transition-colors dark:bg-gray-900">
     <!-- Top bar -->
-    <header class="flex items-center gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+    <header class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
       <button
         @click="goBack"
         class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -12,7 +12,7 @@
         </svg>
       </button>
 
-      <div class="min-w-0 flex-1">
+      <div class="w-full min-w-0 sm:w-auto sm:flex-1">
         <input
           v-if="post.frontmatter.title !== undefined"
           :value="post.frontmatter.title as string"

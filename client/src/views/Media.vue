@@ -2,12 +2,12 @@
   <div class="min-h-screen bg-gray-50 transition-colors dark:bg-gray-900">
     <!-- Header -->
     <header class="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
+      <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
         <div>
           <h1 class="text-lg font-bold text-gray-900 dark:text-gray-100">资源管理</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">图片与媒体文件</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2">
           <DarkToggle />
           <button
             @click="router.push('/posts')"
