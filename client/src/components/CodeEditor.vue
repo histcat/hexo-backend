@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+  <div class="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
     <!-- Line numbers gutter -->
     <div
       ref="gutterRef"
@@ -21,7 +21,7 @@
       :disabled="disabled"
       :placeholder="placeholder"
       :spellcheck="spellcheck"
-      class="min-h-0 flex-1 resize-none border-0 bg-transparent px-3 py-3 font-mono text-sm leading-5 text-gray-900 placeholder-gray-400 focus:outline-none"
+      class="min-h-0 min-w-0 flex-1 resize-none border-0 bg-transparent px-3 py-3 font-mono text-sm leading-5 text-gray-900 placeholder-gray-400 focus:outline-none"
       wrap="off"
     />
   </div>

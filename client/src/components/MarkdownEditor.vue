@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
+  <div class="flex min-h-0 min-w-0 flex-1 flex-col">
     <!-- Toolbar -->
     <div
       class="flex max-w-full items-center gap-0.5 overflow-x-auto border-b border-gray-200 bg-gray-50 px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-gray-700 dark:bg-gray-800"
@@ -36,7 +36,7 @@
       @keydown.tab.prevent="insertTab"
       :disabled="disabled"
       :placeholder="placeholder"
-      class="min-h-0 flex-1 resize-none border-0 bg-white p-4 font-mono text-sm leading-relaxed text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 disabled:bg-gray-50 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-500 dark:disabled:bg-gray-800"
+      class="min-h-0 min-w-0 flex-1 resize-none border-0 bg-white p-4 font-mono text-sm leading-relaxed text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 disabled:bg-gray-50 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-500 dark:disabled:bg-gray-800"
     />
   </div>
 </template>

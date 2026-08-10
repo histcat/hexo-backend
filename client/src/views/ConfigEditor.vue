@@ -91,9 +91,9 @@
     </div>
 
     <!-- Editor body -->
-    <div v-else class="flex min-h-0 flex-1 flex-col p-4">
+    <div v-else class="flex min-h-0 min-w-0 flex-1 flex-col p-4">
       <!-- Code view -->
-      <div v-show="tab === 'code'" class="flex min-h-0 flex-1 flex-col">
+      <div v-show="tab === 'code'" class="flex min-h-0 min-w-0 flex-1 flex-col">
         <label class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">直接编辑</label>
         <CodeEditor
           ref="codeEditorRef"
@@ -105,7 +105,7 @@
       </div>
 
       <!-- Form view -->
-      <div v-show="tab === 'form'" class="min-h-0 flex-1 overflow-y-auto">
+      <div v-show="tab === 'form'" class="min-h-0 min-w-0 flex-1 overflow-y-auto">
         <label class="mb-2 block text-xs font-medium text-gray-500 dark:text-gray-400">结构化编辑</label>
         <div v-if="parsedData && tab === 'form'">
           <ConfigForm
