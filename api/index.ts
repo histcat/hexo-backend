@@ -1,9 +1,10 @@
 /**
- * Vercel serverless function entry (required catch-all).
+ * Vercel serverless function entry.
  *
- * Every /api/* request is forwarded to the shared Hono app, so the API
- * code is identical between local dev and Vercel. Static files
- * (client/dist) and the SPA fallback are handled by Vercel (vercel.json).
+ * Every /api/* request is rewritten to this single function by
+ * vercel.json (source "/api/(.*)" -> "/api/index"), then forwarded to
+ * the shared Hono app. The function receives the original URL, so Hono
+ * routing stays identical between local dev and Vercel.
  *
  * Plain Vercel Functions use the "fetch Web Standard export": a default
  * export object with a fetch(request) method that receives a standard
