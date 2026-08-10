@@ -35,3 +35,14 @@ export function isProduction(): boolean {
     (typeof process !== 'undefined' && process.env.NODE_ENV === 'production')
   )
 }
+
+/**
+ * 媒体文件对外 URL 的 CDN 前缀（jsDelivr 风格，`/gh/{owner}/{repo}@{branch}/{path}`）。
+ * 默认使用 js.histcat.top（反向代理 cdn.jsdelivr.net），可通过环境变量 MEDIA_CDN_BASE 覆盖。
+ */
+export function getMediaCdnBase(): string {
+  return (
+    (typeof process !== 'undefined' && process.env.MEDIA_CDN_BASE) ||
+    'https://js.histcat.top/gh'
+  )
+}

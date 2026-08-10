@@ -168,7 +168,8 @@ hexo-backend/
 ### 5. 媒体管理
 
 1. 在「媒体」页浏览仓库中的图片（按配置的 `assetsPublicDir` 或 `postsDir` 扫描）；
-2. 支持图片上传（PNG / JPG / GIF / SVG / WebP / BMP，单文件不超过 10 MB），上传后自动返回 URL 可插入文章。
+2. 支持图片上传（PNG / JPG / GIF / WebP / BMP，单文件不超过 10 MB），上传后自动返回 URL 可插入文章；
+3. 返回的图片 URL 走 `https://js.histcat.top/gh/{owner}/{repo}@{branch}/{path}`（jsDelivr GitHub CDN，由该域名反代），可通过环境变量 `MEDIA_CDN_BASE` 覆盖为其他 CDN 前缀。
 
 ### 6. 说说管理
 

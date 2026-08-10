@@ -5,7 +5,7 @@ import { requestLogger } from './middleware/logger.js'
 import { requireAuth, AUTH_COOKIE } from './middleware/auth.js'
 import { applyCsrfCookie, csrfGuard } from './middleware/csrf.js'
 import { signJwt, encryptToken } from './services/jwt.js'
-import { isProduction } from './services/env.js'
+import { isProduction, getMediaCdnBase } from './services/env.js'
 import {
   fetchGitHubUser,
   listUserRepos,
@@ -63,6 +63,15 @@ function isPostPath(filePath: string, postsDir: string, extensions: string[]): b
   if (!isValidRepoPath(filePath)) return false
   if (!filePath.startsWith(postsDir)) return false
   return extensions.some((ext) => filePath.toLowerCase().endsWith(ext.toLowerCase()))
+}
+
+/**
+ * 生成媒体文件的公开 URL（jsDelivr GitHub CDN 路径，走 js.histcat.top 反代）。
+ * 例如：https://js.histcat.top/gh/histcat/blog@main/src/content/posts/a.png
+ */
+function buildMediaUrl(owner: string, name: string, branch: string, path: string): string {
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/')
+  return `${getMediaCdnBase()}/${owner}/${name}@${encodeURIComponent(branch)}/${encodedPath}`
 }
 
 /** Map a GitHubError to a typed HTTP status code */
@@ -1670,7 +1679,7 @@ apiRouter.post('/media', requireAuth, async (c) => {
           data: {
             path: retryPath,
             sha: retryData.content.sha,
-            url: retryData.content.download_url || retryData.content.html_url || retryPath,
+            url: buildMediaUrl(owner, name, session.selectedRepo.defaultBranch, retryPath),
             size: bytes.length,
           },
         } satisfies ApiResponse, 201)
@@ -1687,7 +1696,7 @@ apiRouter.post('/media', requireAuth, async (c) => {
       data: {
         path: filePath,
         sha: data.content.sha,
-        url: data.content.download_url || data.content.html_url || filePath,
+        url: buildMediaUrl(owner, name, session.selectedRepo.defaultBranch, filePath),
         size: bytes.length,
       },
     } satisfies ApiResponse, 201)
@@ -1783,7 +1792,7 @@ apiRouter.get('/media', requireAuth, async (c) => {
     name: entry.path.split('/').pop() || entry.path,
     sha: entry.sha,
     size: entry.size || 0,
-    url: `https://raw.githubusercontent.com/${owner}/${name}/${defaultBranch}/${entry.path}`,
+    url: buildMediaUrl(owner, name, defaultBranch, entry.path),
   }))
 
   return c.json({
