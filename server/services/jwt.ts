@@ -10,7 +10,7 @@
  */
 
 import { SignJWT, jwtVerify } from 'jose'
-import type { RepoConfig } from '../types.js'
+import type { MediaRepo, RepoConfig } from '../types.js'
 import { getJwtSecret } from './env.js'
 
 const encoder = new TextEncoder()
@@ -133,6 +133,8 @@ export interface JwtPayload {
   }
   /** Repo config parsed from .astro-editor.yml */
   repoConfig?: RepoConfig
+  /** 资源（图片）上传目标仓库（可选） */
+  mediaRepo?: MediaRepo
 }
 
 const JWT_EXPIRY_SECONDS = 30 * 24 * 60 * 60 // 30 days

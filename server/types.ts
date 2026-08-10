@@ -49,6 +49,15 @@ export interface Session {
   }
   /** Parsed repo config (set after /api/repo/select) */
   repoConfig?: RepoConfig
+  /** 资源（图片）上传目标仓库（可选，独立于博客仓库，避免传图触发博客重建） */
+  mediaRepo?: MediaRepo
+}
+
+/** 资源（图片）上传目标仓库 */
+export interface MediaRepo {
+  owner: string
+  name: string
+  defaultBranch: string
 }
 
 /** User profile returned to the frontend (no token!) */

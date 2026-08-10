@@ -89,6 +89,7 @@ export const requireAuth: MiddlewareHandler = async (c, next) => {
     encryptedToken: payload.encryptedToken,
     selectedRepo: payload.selectedRepo,
     repoConfig: payload.repoConfig,
+    mediaRepo: payload.mediaRepo,
   } satisfies Session)
 
   await next()
@@ -114,6 +115,7 @@ export const optionalAuth: MiddlewareHandler = async (c, next) => {
       avatarUrl: payload.avatarUrl,
       githubToken,
       encryptedToken: payload.encryptedToken,
+      mediaRepo: payload.mediaRepo,
     } satisfies Session)
   } catch {
     // If decryption fails, just continue without session

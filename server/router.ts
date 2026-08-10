@@ -31,7 +31,7 @@ import {
   extractCategory,
   extractPublished,
 } from './services/frontmatter.js'
-import type { ApiResponse, UserInfo, RepoRef, RepoConfig, PostSummary, ConfigFileSummary, Session } from './types.js'
+import type { ApiResponse, UserInfo, RepoRef, RepoConfig, PostSummary, ConfigFileSummary, Session, MediaRepo } from './types.js'
 
 /**
  * Extract the file path from a wildcard route's URL.
@@ -386,6 +386,89 @@ apiRouter.post('/repo/select', requireAuth, async (c) => {
 })
 
 /**
+ * POST /api/repo/select-media
+ * 选择资源（图片）上传目标仓库（可选）。
+ * 独立于博客仓库：图片提交到该仓库不会触发博客重新构建。
+ * Body: { owner: string, name: string }
+ */
+apiRouter.post('/repo/select-media', requireAuth, async (c) => {
+  const session = c.get('session')
+
+  if (!session.selectedRepo) {
+    return c.json({
+      ok: false,
+      error: { code: 'NO_REPO_SELECTED', message: '请先选择博客仓库' },
+    } satisfies ApiResponse, 400)
+  }
+
+  let body: { owner?: string; name?: string }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '请求体格式错误' },
+    } satisfies ApiResponse, 400)
+  }
+
+  const { owner, name } = body
+  if (!owner || !name) {
+    return c.json({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: '请提供 owner 和 name' },
+    } satisfies ApiResponse, 400)
+  }
+
+  let repoInfo: { default_branch: string }
+  try {
+    repoInfo = await fetchRepoInfo(session.githubToken, owner, name)
+  } catch (e) {
+    if (e instanceof GitHubError) {
+      const status = e.code === 'NOT_FOUND' ? 404 : 502
+      return c.json({
+        ok: false,
+        error: { code: e.code, message: e.message },
+      } satisfies ApiResponse, status)
+    }
+    console.error('Unexpected error selecting media repo:', e)
+    return c.json({
+      ok: false,
+      error: { code: 'GITHUB_ERROR', message: '获取仓库信息失败' },
+    } satisfies ApiResponse, 502)
+  }
+
+  const mediaRepo: MediaRepo = {
+    owner,
+    name,
+    defaultBranch: repoInfo.default_branch,
+  }
+
+  const newJwt = await signJwt({
+    sub: session.sub,
+    login: session.login,
+    name: session.name,
+    avatarUrl: session.avatarUrl,
+    encryptedToken: session.encryptedToken,
+    selectedRepo: session.selectedRepo,
+    repoConfig: session.repoConfig,
+    mediaRepo,
+  })
+
+  setCookie(c, AUTH_COOKIE, newJwt, {
+    path: '/',
+    httpOnly: true,
+    secure: isProduction(),
+    sameSite: 'Lax',
+    maxAge: SESSION_MAX_AGE,
+  })
+
+  return c.json({
+    ok: true,
+    data: { repo: mediaRepo },
+  } satisfies ApiResponse<{ repo: MediaRepo }>)
+})
+
+/**
  * GET /api/repo/current
  * Return the currently selected repo and its config (from JWT session).
  * Useful for restoring editor state after a page refresh.
@@ -405,8 +488,9 @@ apiRouter.get('/repo/current', requireAuth, (c) => {
     data: {
       repo: session.selectedRepo,
       config: session.repoConfig,
+      mediaRepo: session.mediaRepo ?? null,
     },
-  } satisfies ApiResponse<{ repo: RepoRef; config: RepoConfig }>)
+  } satisfies ApiResponse<{ repo: RepoRef; config: RepoConfig; mediaRepo: MediaRepo | null }>)
 })
 
 // ── Posts endpoints ─────────────────────────────────────────────
@@ -1537,7 +1621,11 @@ apiRouter.post('/media', requireAuth, async (c) => {
     } satisfies ApiResponse, 400)
   }
 
-  const { owner, name } = session.selectedRepo
+  // 目标仓库：优先使用独立资源仓库（mediaRepo），否则为博客仓库
+  const mediaRepo = session.mediaRepo
+  const owner = mediaRepo?.owner ?? session.selectedRepo.owner
+  const name = mediaRepo?.name ?? session.selectedRepo.name
+  const mediaBranch = mediaRepo?.defaultBranch ?? session.selectedRepo.defaultBranch
   const {
     postsDir,
     layout,
@@ -1550,7 +1638,10 @@ apiRouter.post('/media', requireAuth, async (c) => {
   // Determine destination directory
   let destDir = (formData.get('destDir') as string)?.trim() || ''
   if (!destDir) {
-    if (assetsMode === 'public') {
+    if (mediaRepo) {
+      // 独立资源仓库：默认放在 images/ 目录
+      destDir = 'images'
+    } else if (assetsMode === 'public') {
       destDir = assetsPublicDir.replace(/\/$/, '')
     } else {
       // Co-located: put image next to a post. If no destDir specified,
@@ -1679,7 +1770,7 @@ apiRouter.post('/media', requireAuth, async (c) => {
           data: {
             path: retryPath,
             sha: retryData.content.sha,
-            url: buildMediaUrl(owner, name, session.selectedRepo.defaultBranch, retryPath),
+            url: buildMediaUrl(owner, name, mediaBranch, retryPath),
             size: bytes.length,
           },
         } satisfies ApiResponse, 201)
@@ -1696,7 +1787,7 @@ apiRouter.post('/media', requireAuth, async (c) => {
       data: {
         path: filePath,
         sha: data.content.sha,
-        url: buildMediaUrl(owner, name, session.selectedRepo.defaultBranch, filePath),
+        url: buildMediaUrl(owner, name, mediaBranch, filePath),
         size: bytes.length,
       },
     } satisfies ApiResponse, 201)
@@ -1726,7 +1817,11 @@ apiRouter.get('/media', requireAuth, async (c) => {
     } satisfies ApiResponse, 400)
   }
 
-  const { owner, name, defaultBranch } = session.selectedRepo
+  // 目标仓库：优先使用独立资源仓库（mediaRepo），否则为博客仓库
+  const mediaRepo = session.mediaRepo
+  const owner = mediaRepo?.owner ?? session.selectedRepo.owner
+  const name = mediaRepo?.name ?? session.selectedRepo.name
+  const branch = mediaRepo?.defaultBranch ?? session.selectedRepo.defaultBranch
   const { postsDir, assetsPublicDir, assetsMode } = session.repoConfig
   const token = session.githubToken
 
@@ -1737,7 +1832,7 @@ apiRouter.get('/media', requireAuth, async (c) => {
   // Get repo tree
   let tree: GitHubTreeEntry[]
   try {
-    tree = await fetchRepoTree(token, owner, name, defaultBranch)
+    tree = await fetchRepoTree(token, owner, name, branch)
   } catch (e) {
     if (e instanceof GitHubError) {
       return c.json({
@@ -1753,7 +1848,10 @@ apiRouter.get('/media', requireAuth, async (c) => {
 
   // Determine scan directories
   const scanDirs: string[] = []
-  if (assetsMode === 'public') {
+  if (mediaRepo) {
+    // 独立资源仓库：扫描整个仓库
+    scanDirs.push('')
+  } else if (assetsMode === 'public') {
     scanDirs.push(assetsPublicDir.replace(/\/$/, ''))
   } else {
     scanDirs.push(postsDir.replace(/\/$/, ''))
@@ -1792,7 +1890,7 @@ apiRouter.get('/media', requireAuth, async (c) => {
     name: entry.path.split('/').pop() || entry.path,
     sha: entry.sha,
     size: entry.size || 0,
-    url: buildMediaUrl(owner, name, defaultBranch, entry.path),
+    url: buildMediaUrl(owner, name, branch, entry.path),
   }))
 
   return c.json({

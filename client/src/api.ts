@@ -269,9 +269,16 @@ export const api = {
     })
   },
 
+  /** 选择资源（图片）上传目标仓库（可选，独立于博客仓库） */
+  selectMediaRepo(owner: string, name: string) {
+    return this.post<{ repo: RepoItem }>('/repo/select-media', { owner, name })
+  },
+
   /** Get the currently selected repo and config (from JWT session) */
   repoCurrent() {
-    return this.get<{ repo: RepoItem; config: RepoConfig }>('/repo/current')
+    return this.get<{ repo: RepoItem; config: RepoConfig; mediaRepo?: RepoItem | null }>(
+      '/repo/current',
+    )
   },
 
   // ── Posts ──────────────────────────────────────────────────────

@@ -22,10 +22,32 @@
 
     <main class="mx-auto max-w-4xl px-4 py-8">
       <div class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">选择仓库</h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          {{ phase === 'blog' ? '选择博客仓库' : '选择资源上传仓库（可选）' }}
+        </h2>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          选择一个你有写权限的仓库开始编辑
+          {{
+            phase === 'blog'
+              ? '选择一个你有写权限的仓库开始编辑'
+              : `已选博客仓库 ${blogRepo?.owner}/${blogRepo?.name}，再选一个仓库用于上传图片（图片不会触发博客重新构建）`
+          }}
         </p>
+      </div>
+
+      <!-- 资源仓库选择提示 -->
+      <div
+        v-if="phase === 'media'"
+        class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/40"
+      >
+        <p class="text-sm text-blue-700 dark:text-blue-300">
+          图片将提交到独立资源仓库，避免博客因传图反复重新构建。点击「跳过」则继续上传到博客仓库。
+        </p>
+        <button
+          @click="skipMediaRepo"
+          class="rounded-lg border border-blue-300 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50"
+        >
+          跳过（使用博客仓库）
+        </button>
       </div>
 
       <!-- Loading -->
@@ -155,6 +177,8 @@ const repos = ref<RepoItem[]>([])
 const loading = ref(true)
 const error = ref('')
 const selecting = ref('')
+const phase = ref<'blog' | 'media'>('blog')
+const blogRepo = ref<RepoItem | null>(null)
 
 async function fetchRepos() {
   loading.value = true
@@ -174,13 +198,23 @@ async function select(repo: RepoItem) {
   selecting.value = repo.owner + '/' + repo.name
   error.value = ''
   try {
-    await api.selectRepo(repo.owner, repo.name)
-    router.replace('/posts')
+    if (phase.value === 'blog') {
+      await api.selectRepo(repo.owner, repo.name)
+      blogRepo.value = repo
+      phase.value = 'media'
+    } else {
+      await api.selectMediaRepo(repo.owner, repo.name)
+      router.replace('/posts')
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : '选择仓库失败'
   } finally {
     selecting.value = ''
   }
+}
+
+function skipMediaRepo() {
+  router.replace('/posts')
 }
 
 async function doLogout() {
