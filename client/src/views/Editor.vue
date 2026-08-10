@@ -7,7 +7,7 @@
         class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
         title="返回"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
@@ -28,19 +28,19 @@
       <!-- Save state -->
       <span
         v-if="saveState === 'saving'"
-        class="hidden text-xs text-blue-500 sm:inline"
+        class="text-xs text-blue-500"
       >保存中...</span>
       <span
         v-else-if="saveState === 'saved'"
-        class="hidden text-xs text-green-600 dark:text-green-400 sm:inline"
+        class="text-xs text-green-600 dark:text-green-400"
       >✓ 已保存</span>
       <span
         v-else-if="saveState === 'error'"
-        class="hidden text-xs text-red-500 sm:inline"
+        class="text-xs text-red-500"
       >保存失败</span>
       <span
         v-else-if="isDirty"
-        class="hidden text-xs text-amber-500 sm:inline"
+        class="text-xs text-amber-500"
       >未保存</span>
 
       <DarkToggle />
@@ -84,7 +84,7 @@
           class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
           title="更多操作"
         >
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
           </svg>
         </button>
@@ -181,14 +181,42 @@
 
     <!-- Editor body -->
     <div v-else class="flex min-h-0 flex-1 flex-col md:flex-row">
-      <!-- Left: Forms + Editor -->
-      <div class="flex min-h-0 flex-1 flex-col border-r border-gray-200 dark:border-gray-700">
-        <!-- Frontmatter YAML editor (collapsible) -->
-        <details
-          class="border-b border-gray-200 dark:border-gray-700"
-          :class="mobileTab === 'preview' ? 'hidden md:block' : ''"
-          open
+      <!-- Mobile tabs -->
+      <div class="flex border-b border-gray-200 md:hidden dark:border-gray-700">
+        <button
+          @click="mobileTab = 'edit'"
+          :class="[
+            'flex-1 py-2 text-center text-xs font-medium',
+            mobileTab === 'edit'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 dark:text-gray-400',
+          ]"
         >
+          编辑
+        </button>
+        <button
+          @click="mobileTab = 'preview'"
+          :class="[
+            'flex-1 py-2 text-center text-xs font-medium',
+            mobileTab === 'preview'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 dark:text-gray-400',
+          ]"
+        >
+          预览
+        </button>
+      </div>
+
+      <!-- Left: Forms + Editor -->
+      <div
+        :class="[
+          'flex min-h-0 flex-1 flex-col border-r border-gray-200 dark:border-gray-700',
+          mobileTab === 'edit' ? 'flex' : 'hidden',
+          'md:flex',
+        ]"
+      >
+        <!-- Frontmatter YAML editor (collapsible) -->
+        <details class="border-b border-gray-200 dark:border-gray-700" open>
           <summary class="flex cursor-pointer items-center gap-2 px-4 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800">
             Frontmatter (YAML)
             <span v-if="yamlError" class="text-red-500">— {{ yamlError }}</span>
@@ -213,32 +241,6 @@
 
         <!-- Markdown editor -->
         <div class="flex min-h-0 flex-1 flex-col">
-          <!-- Mobile tabs -->
-          <div class="flex border-b border-gray-200 md:hidden dark:border-gray-700">
-            <button
-              @click="mobileTab = 'edit'"
-              :class="[
-                'flex-1 py-2 text-center text-xs font-medium',
-                mobileTab === 'edit'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-500 dark:text-gray-400',
-              ]"
-            >
-              编辑
-            </button>
-            <button
-              @click="mobileTab = 'preview'"
-              :class="[
-                'flex-1 py-2 text-center text-xs font-medium',
-                mobileTab === 'preview'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-500 dark:text-gray-400',
-              ]"
-            >
-              预览
-            </button>
-          </div>
-
           <div
             :class="[
               'flex min-h-0 flex-1',

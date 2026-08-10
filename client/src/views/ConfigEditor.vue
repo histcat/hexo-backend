@@ -7,7 +7,7 @@
         class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
         title="返回"
       >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
@@ -22,19 +22,19 @@
       <!-- Save state -->
       <span
         v-if="saveState === 'saving'"
-        class="hidden text-xs text-blue-500 sm:inline"
+        class="text-xs text-blue-500"
       >保存中...</span>
       <span
         v-else-if="saveState === 'saved'"
-        class="hidden text-xs text-green-600 dark:text-green-400 sm:inline"
+        class="text-xs text-green-600 dark:text-green-400"
       >✓ 已保存</span>
       <span
         v-else-if="saveState === 'error'"
-        class="hidden text-xs text-red-500 sm:inline"
+        class="text-xs text-red-500"
       >保存失败</span>
       <span
         v-else-if="isDirty"
-        class="hidden text-xs text-amber-500 sm:inline"
+        class="text-xs text-amber-500"
       >未保存</span>
 
       <!-- Tab switcher -->

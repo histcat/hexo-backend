@@ -1,13 +1,13 @@
 <template>
   <button
     @click="toggle"
-    class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+    class="rounded-lg p-1 text-gray-500 hover:bg-gray-100 sm:p-1.5 dark:text-gray-400 dark:hover:bg-gray-800"
     :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
   >
     <!-- Sun icon (light mode) -->
     <svg
       v-if="isDark"
-      class="h-5 w-5"
+      class="h-4 w-4 sm:h-5 sm:w-5"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -22,7 +22,7 @@
     <!-- Moon icon (dark mode) -->
     <svg
       v-else
-      class="h-5 w-5"
+      class="h-4 w-4 sm:h-5 sm:w-5"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
