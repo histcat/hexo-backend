@@ -2,7 +2,7 @@
   <div class="flex min-h-0 flex-1 flex-col">
     <!-- Toolbar -->
     <div
-      class="flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-gray-700 dark:bg-gray-800"
+      class="flex items-center gap-0.5 overflow-x-auto border-b border-gray-200 bg-gray-50 px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden dark:border-gray-700 dark:bg-gray-800"
     >
       <button
         v-for="btn in toolbar"
@@ -10,16 +10,16 @@
         @click="btn.action"
         :disabled="disabled"
         :title="btn.label"
-        class="rounded p-1 text-gray-500 sm:p-1.5 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-200"
+        class="shrink-0 rounded p-1 text-gray-500 sm:p-1.5 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-200"
         type="button"
         v-html="btn.icon"
       />
-      <span class="mx-1 h-3.5 w-px sm:h-4 bg-gray-300 dark:bg-gray-600" />
+      <span class="mx-1 h-3.5 w-px shrink-0 bg-gray-300 sm:h-4 dark:bg-gray-600" />
       <button
         @click="insertImage"
         :disabled="disabled"
         title="插入图片"
-        class="rounded p-1 text-gray-500 sm:p-1.5 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-200"
+        class="shrink-0 rounded p-1 text-gray-500 sm:p-1.5 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-200"
         type="button"
       >
         <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
